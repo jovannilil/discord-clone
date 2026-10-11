@@ -32,7 +32,7 @@ export default function App() {
     setUser(null);
   };
 
-  if (user) return <Main user={user} config={config} onLogout={logout} />;
+  if (user) return <Main user={user} config={config} onLogout={logout} onUserChange={setUser} />;
 
   const login = <Login config={config} onAuth={onAuth} />;
   return config.googleClientId ? (

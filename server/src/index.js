@@ -6,8 +6,9 @@ import { randomUUID, randomBytes } from "node:crypto";
 import express from "express";
 import { config } from "./config.js";
 import { db, channelForMember } from "./db.js";
-import { requireAuth, signToken, publicUser, upsertUser, verifyGoogleCredential } from "./auth.js";
+import { requireAuth, signToken, publicUser, upsertUser, verifyGoogleCredential, backfillHandles } from "./auth.js";
 import { setupRealtime, isOnline, voiceStatesForServer } from "./realtime.js";
+import { registerSocialRoutes } from "./social.js";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -66,6 +67,7 @@ app.post(
       email: payload.email ?? null,
       username: cleanName(payload.name || payload.email?.split("@")[0] || "user", 32),
       avatar: payload.picture ?? null,
+      handleHint: payload.email?.split("@")[0],
     });
     res.json({ token: signToken(user), user: publicUser(user) });
   })
@@ -84,6 +86,9 @@ app.post(
 );
 
 app.get("/api/me", requireAuth, (req, res) => res.json(publicUser(req.user)));
+
+// Friends, direct messages and profile editing
+registerSocialRoutes(app, io, route);
 
 // ---------- Servers ----------
 
@@ -166,7 +171,7 @@ app.get(
     ).map(channelDto);
     const members = (
       await db.all(
-        `SELECT u.id, u.username, u.avatar FROM users u
+        `SELECT u.id, u.username, u.handle, u.avatar FROM users u
          JOIN members m ON m.user_id = u.id
          WHERE m.server_id = ? ORDER BY lower(u.username)`,
         [server.id]
@@ -250,6 +255,8 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Something went wrong on the server" });
 });
+
+await backfillHandles();
 
 httpServer.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port} (database: ${db.kind})`);

@@ -15,7 +15,8 @@ function formatStamp(ts) {
   return `${d.toLocaleDateString()} ${formatTime(ts)}`;
 }
 
-export default function ChatView({ channel, state, socket, typing, onLoadOlder }) {
+// For DMs, `showHeader` is false (DMView draws its own header) and `intro` / `placeholder` are customized.
+export default function ChatView({ channel, state, socket, typing, onLoadOlder, showHeader = true, intro, placeholder }) {
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const [, setTick] = useState(0);
@@ -103,10 +104,12 @@ export default function ChatView({ channel, state, socket, typing, onLoadOlder }
 
   return (
     <div className="chat">
-      <header className="content-header">
-        <HashIcon size={22} />
-        <span>{channel.name}</span>
-      </header>
+      {showHeader && (
+        <header className="content-header">
+          <HashIcon size={22} />
+          <span>{channel.name}</span>
+        </header>
+      )}
 
       <div className="messages" ref={listRef} onScroll={onScroll}>
         {state?.hasMore ? (
@@ -114,7 +117,8 @@ export default function ChatView({ channel, state, socket, typing, onLoadOlder }
             Load older messages
           </button>
         ) : (
-          state?.loaded && (
+          state?.loaded &&
+          (intro ?? (
             <div className="channel-intro">
               <div className="channel-intro-icon">
                 <HashIcon size={36} />
@@ -122,7 +126,7 @@ export default function ChatView({ channel, state, socket, typing, onLoadOlder }
               <h2>Welcome to #{channel.name}!</h2>
               <p className="muted">This is the start of the #{channel.name} channel.</p>
             </div>
-          )
+          ))
         )}
         {!state?.loaded && <div className="muted center">Loading messages…</div>}
 
@@ -157,7 +161,7 @@ export default function ChatView({ channel, state, socket, typing, onLoadOlder }
           value={text}
           onChange={onChange}
           maxLength={2000}
-          placeholder={`Message #${channel.name}`}
+          placeholder={placeholder ?? `Message #${channel.name}`}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();

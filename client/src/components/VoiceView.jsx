@@ -62,6 +62,15 @@ export default function VoiceView({ channel, voice, participantsHere, onJoin }) 
         <span>{channel.name}</span>
       </header>
 
+      <CallPanel voice={voice} />
+    </div>
+  );
+}
+
+/** The call itself: everyone's video/avatar tiles plus mute / camera / screen / hang up. */
+export function CallPanel({ voice }) {
+  return (
+    <>
       <div className="tiles">
         {voice.participants.map((p) => {
           const peer = voice.peers[p.socketId];
@@ -104,6 +113,6 @@ export default function VoiceView({ channel, voice, participantsHere, onJoin }) 
           <PhoneOffIcon size={22} />
         </button>
       </div>
-    </div>
+    </>
   );
 }

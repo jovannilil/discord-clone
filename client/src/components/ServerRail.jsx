@@ -1,4 +1,4 @@
-import { PlusIcon } from "./icons.jsx";
+import { PlusIcon, LogoIcon } from "./icons.jsx";
 
 const initials = (name) =>
   name
@@ -9,9 +9,20 @@ const initials = (name) =>
     .slice(0, 3)
     .toUpperCase();
 
-export default function ServerRail({ servers, activeId, onSelect, onAdd }) {
+export const HOME = "@me";
+
+export default function ServerRail({ servers, activeId, onSelect, onAdd, homeBadge }) {
   return (
     <nav className="rail" aria-label="Servers">
+      <button
+        className={`rail-icon home ${activeId === HOME ? "active" : ""}`}
+        title="Home: friends and direct messages"
+        onClick={() => onSelect(HOME)}
+      >
+        <LogoIcon size={26} />
+        {homeBadge > 0 && <span className="rail-badge">{homeBadge > 99 ? "99+" : homeBadge}</span>}
+      </button>
+      <div className="rail-sep" />
       {servers.map((s) => (
         <button
           key={s.id}

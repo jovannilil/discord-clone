@@ -1,17 +1,7 @@
 import { useState } from "react";
 import Avatar from "./Avatar.jsx";
-import {
-  HashIcon,
-  SpeakerIcon,
-  MicIcon,
-  MicOffIcon,
-  VideoIcon,
-  VideoOffIcon,
-  ScreenIcon,
-  PhoneOffIcon,
-  LogoutIcon,
-  PlusIcon,
-} from "./icons.jsx";
+import UserArea from "./UserArea.jsx";
+import { HashIcon, SpeakerIcon, MicOffIcon, PlusIcon } from "./icons.jsx";
 
 function SectionTitle({ title, onAdd }) {
   return (
@@ -26,52 +16,14 @@ function SectionTitle({ title, onAdd }) {
   );
 }
 
-function VoicePanel({ voice }) {
-  return (
-    <div className="voice-panel">
-      <div className="voice-panel-top">
-        <div className="truncate">
-          <div className="voice-connected">Voice Connected</div>
-          <div className="muted small truncate">
-            {voice.channel.name} / {voice.channel.serverName}
-          </div>
-        </div>
-        <button className="icon-btn danger" title="Disconnect" onClick={voice.leave}>
-          <PhoneOffIcon size={18} />
-        </button>
-      </div>
-      <div className="voice-panel-actions">
-        <button
-          className={`panel-btn ${voice.videoMode === "camera" ? "on" : ""}`}
-          title={voice.videoMode === "camera" ? "Turn off camera" : "Turn on camera"}
-          onClick={voice.toggleCamera}
-        >
-          {voice.videoMode === "camera" ? <VideoIcon /> : <VideoOffIcon />}
-        </button>
-        <button
-          className={`panel-btn ${voice.videoMode === "screen" ? "on" : ""}`}
-          title={voice.videoMode === "screen" ? "Stop sharing" : "Share your screen"}
-          onClick={voice.toggleScreen}
-        >
-          <ScreenIcon />
-        </button>
-      </div>
-      {voice.error && (
-        <div className="voice-error" onClick={voice.clearError} title="Dismiss">
-          {voice.error}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function ChannelSidebar({ data, user, activeChannelId, onSelect, onCreateChannel, voice, onLogout, connected }) {
+export default function ChannelSidebar({ data, user, activeChannelId, onSelect, onCreateChannel, userArea }) {
   const { server, channels, voiceStates } = data;
   const isOwner = server.ownerId === user.id;
   const [copied, setCopied] = useState(false);
 
   const textChannels = channels.filter((c) => c.type === "text");
   const voiceChannels = channels.filter((c) => c.type === "voice");
+  const voiceChannelId = userArea.voice.channel?.id;
 
   function copyInvite() {
     navigator.clipboard
@@ -111,7 +63,7 @@ export default function ChannelSidebar({ data, user, activeChannelId, onSelect, 
         {voiceChannels.map((c) => (
           <div key={c.id}>
             <button
-              className={`channel ${c.id === activeChannelId ? "active" : ""} ${voice.channel?.id === c.id ? "connected" : ""}`}
+              className={`channel ${c.id === activeChannelId ? "active" : ""} ${voiceChannelId === c.id ? "connected" : ""}`}
               onClick={() => onSelect(c)}
             >
               <SpeakerIcon size={18} />
@@ -133,30 +85,7 @@ export default function ChannelSidebar({ data, user, activeChannelId, onSelect, 
         ))}
       </div>
 
-      {voice.channel && <VoicePanel voice={voice} />}
-      {!voice.channel && voice.error && (
-        <div className="voice-error standalone" onClick={voice.clearError} title="Dismiss">
-          {voice.error}
-        </div>
-      )}
-
-      <div className="user-panel">
-        <Avatar user={user} size={32} status={connected ? "online" : "offline"} />
-        <div className="truncate user-panel-name">
-          <div className="truncate">{user.username}</div>
-          <div className="muted small">{connected ? "Online" : "Reconnecting…"}</div>
-        </div>
-        <button
-          className={`icon-btn ${voice.muted ? "danger-text" : ""}`}
-          title={voice.muted ? "Unmute" : "Mute"}
-          onClick={voice.toggleMute}
-        >
-          {voice.muted ? <MicOffIcon /> : <MicIcon />}
-        </button>
-        <button className="icon-btn" title="Log out" onClick={onLogout}>
-          <LogoutIcon />
-        </button>
-      </div>
+      <UserArea {...userArea} />
     </aside>
   );
 }
