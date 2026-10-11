@@ -784,3 +784,5 @@ button.member { width: 100%; text-align: left; }
   .rail-icon { width: 42px; height: 42px; }
   .sidebar { width: 200px; }
 }
+.legal-links { margin: 20px 0 0; }
+.legal-links a { color: var(--text-muted); }

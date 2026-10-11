@@ -75,6 +75,10 @@ export default function Login({ config, onAuth }) {
         )}
 
         {error && <p className="error">{error}</p>}
+
+        <p className="legal-links muted small">
+          <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>
+        </p>
       </div>
     </div>
   );
