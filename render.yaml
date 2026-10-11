@@ -5,6 +5,7 @@ services:
     name: discord-clone
     runtime: node
     plan: free
+    region: ohio # same region as the Neon database
     buildCommand: npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client
     startCommand: npm start --prefix server
     healthCheckPath: /api/config
