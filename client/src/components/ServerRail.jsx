@@ -1,4 +1,5 @@
-import { PlusIcon, LogoIcon } from "./icons.jsx";
+import { PlusIcon, LogoIcon, DownloadIcon } from "./icons.jsx";
+import { DESKTOP_DOWNLOAD_URL, showDesktopDownload } from "../desktop.js";
 
 const initials = (name) =>
   name
@@ -37,6 +38,11 @@ export default function ServerRail({ servers, activeId, onSelect, onAdd, homeBad
       <button className="rail-icon add" title="Create or join a server" onClick={onAdd}>
         <PlusIcon size={22} />
       </button>
+      {showDesktopDownload && (
+        <a className="rail-icon add" href={DESKTOP_DOWNLOAD_URL} title="Download the desktop app" aria-label="Download the desktop app">
+          <DownloadIcon size={22} />
+        </a>
+      )}
     </nav>
   );
 }

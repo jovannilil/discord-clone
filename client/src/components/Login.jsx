@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { api } from "../api.js";
+import { DESKTOP_DOWNLOAD_URL, showDesktopDownload } from "../desktop.js";
+import { DownloadIcon } from "./icons.jsx";
 
 export default function Login({ config, onAuth }) {
   const [username, setUsername] = useState("");
@@ -75,6 +77,12 @@ export default function Login({ config, onAuth }) {
         )}
 
         {error && <p className="error">{error}</p>}
+
+        {showDesktopDownload && (
+          <a className="btn download-app full" href={DESKTOP_DOWNLOAD_URL}>
+            <DownloadIcon size={18} /> Download the desktop app for Windows
+          </a>
+        )}
 
         <p className="legal-links muted small">
           <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a>

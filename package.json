@@ -8,7 +8,8 @@
     "start": "npm start --prefix server",
     "ship": "node scripts/ship.js",
     "desktop": "npm start --prefix desktop",
-    "desktop:installer": "npm run dist --prefix desktop"
+    "desktop:installer": "npm run dist --prefix desktop",
+    "release:desktop": "node scripts/release-desktop.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

@@ -786,3 +786,6 @@ button.member { width: 100%; text-align: left; }
 }
 .legal-links { margin: 20px 0 0; }
 .legal-links a { color: var(--text-muted); }
+.btn.download-app { margin-top: 20px; background: var(--bg-active); color: var(--text-strong); text-decoration: none; }
+.btn.download-app:hover { background: #4e5058; }
+a.rail-icon { text-decoration: none; }

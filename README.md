@@ -17,8 +17,10 @@ and voice channels with camera + screen sharing.
 ## Live app
 
 - **Website:** https://discord-clone-oxb2.onrender.com (hosted on Render's free plan, database on Neon)
-- **Desktop app:** run `npm run desktop:installer`, then share `desktop/dist/Discord-Clone-Setup-1.0.0.exe`.
-  The desktop app loads the website, so it always shows the newest version.
+- **Desktop app:** the website has a "Download" button (Windows) that serves the installer from
+  GitHub Releases. The desktop app loads the website, so it always shows the newest version.
+  To publish a new installer (only needed when `desktop/` changes): bump `version` in
+  `desktop/package.json`, then run `npm run desktop:installer` and `npm run release:desktop`.
 - The free server sleeps after 15 minutes without visitors; the first visit after that takes up to a minute.
 
 ### Shipping an update

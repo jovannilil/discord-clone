@@ -10,7 +10,9 @@ const SERVER_URL = process.env.SERVER_URL || config.serverUrl;
 const serverOrigin = new URL(SERVER_URL).origin;
 
 // Google blocks sign-in from user agents that say "Electron", so present as plain Chrome.
-app.userAgentFallback = app.userAgentFallback.replace(/ Electron\/\S+/, "").replace(/ discord-clone-desktop\/\S+/, "");
+// "DiscordCloneDesktop" lets the website know it's inside the app (to hide the "Download app" button).
+app.userAgentFallback =
+  app.userAgentFallback.replace(/ Electron\/\S+/, "").replace(/ discord-clone-desktop\/\S+/, "") + " DiscordCloneDesktop";
 
 // Only one copy of the app at a time; a second launch focuses the existing window.
 if (!app.requestSingleInstanceLock()) app.quit();
