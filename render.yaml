@@ -1,0 +1,22 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Every push to the GitHub repo's main branch redeploys the app automatically.
+services:
+  - type: web
+    name: discord-clone
+    runtime: node
+    plan: free
+    buildCommand: npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client
+    startCommand: npm start --prefix server
+    healthCheckPath: /api/config
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22.14.0"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        value: 930429191645-2vpbf05149vmq8grjmtjm1jm3liqe2fd.apps.googleusercontent.com
+      # Postgres connection string from Neon. Render asks you to paste it when the Blueprint is created.
+      - key: DATABASE_URL
+        sync: false

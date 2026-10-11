@@ -1,0 +1,31 @@
+{
+  "name": "discord-clone-desktop",
+  "productName": "Discord Clone",
+  "version": "1.0.0",
+  "description": "Desktop app for Discord Clone",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.discordclone.desktop",
+    "productName": "Discord Clone",
+    "files": ["main.js", "config.json", "loading.html", "offline.html", "icon.png"],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Discord Clone"
+    },
+    "artifactName": "Discord-Clone-Setup-${version}.${ext}"
+  }
+}

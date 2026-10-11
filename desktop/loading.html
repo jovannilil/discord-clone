@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Discord Clone</title>
+    <style>
+      body {
+        margin: 0;
+        height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #313338;
+        color: #dbdee1;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        text-align: center;
+      }
+      .spinner {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 20px;
+        border: 5px solid #404249;
+        border-top-color: #5865f2;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      p { color: #949ba4; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="spinner"></div>
+      <h2>Connecting…</h2>
+      <p>If nobody has used the server for a while, it can take up to a minute to wake up.</p>
+    </div>
+  </body>
+</html>
