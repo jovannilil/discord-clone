@@ -14,6 +14,29 @@ and voice channels with camera + screen sharing.
 - **Voice channels**: join to talk; turn on your camera or share your screen; mute; see who's in each channel from the sidebar
 - Audio keeps playing while you browse other channels or servers, just like Discord
 
+## Live app
+
+- **Website:** https://discord-clone-oxb2.onrender.com (hosted on Render's free plan, database on Neon)
+- **Desktop app:** run `npm run desktop:installer`, then share `desktop/dist/Discord-Clone-Setup-1.0.0.exe`.
+  The desktop app loads the website, so it always shows the newest version.
+- The free server sleeps after 15 minutes without visitors; the first visit after that takes up to a minute.
+
+### Shipping an update
+
+Commit your changes, then run:
+
+```bash
+npm run ship
+```
+
+This pushes to GitHub and triggers a Render redeploy (via the private deploy hook in `.deploy-hook`,
+which is git-ignored). Everyone gets the new version within a few minutes.
+
+### Letting friends log in
+
+While the Google OAuth app is in "Testing" mode, only listed test users can sign in. Add their Gmail
+addresses in Google Cloud Console → Google Auth Platform → Audience → Test users (up to 100).
+
 ## Quick start
 
 Requires **Node.js 22.13 or newer** (`node -v`).

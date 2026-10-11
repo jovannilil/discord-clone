@@ -5,7 +5,10 @@
     "setup": "npm install && npm install --prefix server && npm install --prefix client",
     "dev": "concurrently -n server,client -c blue,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix client",
-    "start": "npm start --prefix server"
+    "start": "npm start --prefix server",
+    "ship": "node scripts/ship.js",
+    "desktop": "npm start --prefix desktop",
+    "desktop:installer": "npm run dist --prefix desktop"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
