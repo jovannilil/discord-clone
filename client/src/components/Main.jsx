@@ -16,6 +16,9 @@ import ServerModal from "./ServerModal.jsx";
 import ChannelModal from "./ChannelModal.jsx";
 import ProfileModal from "./ProfileModal.jsx";
 import UserProfileModal from "./UserProfileModal.jsx";
+import AddPeopleModal from "./AddPeopleModal.jsx";
+import { dmTitle, isGroup } from "../dm.js";
+import { reportVersion, setInCall } from "../autoUpdate.js";
 import DeviceSettingsModal from "./DeviceSettingsModal.jsx";
 
 const EMPTY_FRIENDS = { friends: [], incoming: [], outgoing: [] };
@@ -58,6 +61,12 @@ export default function Main({ user, config, onLogout, onUserChange }) {
 
   const voiceState = useVoice(socket, config.iceServers);
   const voice = { ...voiceState, openSettings: () => setModal({ type: "devices" }) };
+  const voiceChannelRef = useRef(null);
+  voiceChannelRef.current = voiceState.channel?.id ?? null;
+
+  // Never auto-update in the middle of a call.
+  const inCall = !!voiceState.channel;
+  useEffect(() => setInCall(inCall), [inCall]);
 
   const loadServer = useCallback(async (id) => {
     const data = await api(`/servers/${id}`);
@@ -84,6 +93,7 @@ export default function Main({ user, config, onLogout, onUserChange }) {
       hasConnected = true;
     });
     s.on("disconnect", () => setConnected(false));
+    s.on("app:version", reportVersion); // a deploy restarts the server, so this arrives right after
     s.on("connect_error", (err) => {
       if (err.message === "unauthorized") onLogoutRef.current();
     });
@@ -153,7 +163,15 @@ export default function Main({ user, config, onLogout, onUserChange }) {
     const onPresence = ({ userId, online }) => {
       setServerData((d) => d && { ...d, members: d.members.map((m) => (m.id === userId ? { ...m, online } : m)) });
       setFriends((f) => ({ ...f, friends: f.friends.map((x) => (x.id === userId ? { ...x, online } : x)) }));
-      setDms((list) => list.map((d) => (d.user.id === userId ? { ...d, user: { ...d.user, online } } : d)));
+      setDms((list) =>
+        list.map((d) =>
+          isGroup(d)
+            ? { ...d, members: d.members.map((m) => (m.id === userId ? { ...m, online } : m)) }
+            : d.user.id === userId
+              ? { ...d, user: { ...d.user, online } }
+              : d
+        )
+      );
     };
     const onMemberJoined = ({ serverId, member }) =>
       setServerData((d) =>
@@ -192,6 +210,16 @@ export default function Main({ user, config, onLogout, onUserChange }) {
       }
     };
 
+    // Someone in our 1-on-1 call added people: follow the call into the new group.
+    const onVoiceMoved = async ({ from, to }) => {
+      if (voiceChannelRef.current !== from) return;
+      const list = await api("/dms").catch(() => null);
+      if (!list) return;
+      setDms(list);
+      const group = list.find((d) => d.id === to);
+      if (group) startCallRef.current(group, false);
+    };
+
     socket.on("message:new", onMessage);
     socket.on("typing", onTyping);
     socket.on("presence", onPresence);
@@ -200,6 +228,7 @@ export default function Main({ user, config, onLogout, onUserChange }) {
     socket.on("voice:state", onVoiceState);
     socket.on("friends:changed", loadFriends);
     socket.on("dm:created", loadDms);
+    socket.on("voice:moved", onVoiceMoved);
     return () => {
       socket.off("message:new", onMessage);
       socket.off("typing", onTyping);
@@ -209,6 +238,7 @@ export default function Main({ user, config, onLogout, onUserChange }) {
       socket.off("voice:state", onVoiceState);
       socket.off("friends:changed", loadFriends);
       socket.off("dm:created", loadDms);
+      socket.off("voice:moved", onVoiceMoved);
     };
   }, [socket, user.id, loadFriends, loadDms]);
 
@@ -272,10 +302,18 @@ export default function Main({ user, config, onLogout, onUserChange }) {
     return dm;
   }
 
+  const startCallRef = useRef(null);
+  startCallRef.current = (...args) => startCall(...args);
+
   async function startCall(dm, withVideo) {
     setActiveServerId(HOME);
     setHomeView(dm.id);
-    await voice.join({ id: dm.id, name: dm.user.username, serverId: null, serverName: "Direct Message" });
+    await voice.join({
+      id: dm.id,
+      name: dmTitle(dm, user),
+      serverId: null,
+      serverName: isGroup(dm) ? "Group" : "Direct Message",
+    });
     if (withVideo) voice.toggleCamera();
   }
 
@@ -287,6 +325,40 @@ export default function Main({ user, config, onLogout, onUserChange }) {
     }
   };
   const messageFriend = (person) => openDm(person).catch((err) => alert(err.message));
+
+  const upsertDm = (dm) => setDms((list) => [dm, ...list.filter((d) => d.id !== dm.id)]);
+
+  // "Add people": adds friends to a group, or turns a 1-on-1 DM into a new group (moving the call along).
+  // With no dm, it creates a brand new group.
+  async function addPeople(dm, userIds) {
+    if (dm && isGroup(dm)) {
+      upsertDm(await api(`/groups/${dm.id}/members`, { method: "POST", body: { userIds } }));
+      setModal(null);
+      return;
+    }
+    const group = await api("/groups", { method: "POST", body: { userIds: dm ? [dm.user.id, ...userIds] : userIds } });
+    upsertDm(group);
+    setModal(null);
+    setActiveServerId(HOME);
+    setHomeView(group.id);
+    if (dm && voice.channel?.id === dm.id) {
+      const hadCamera = voice.videoMode === "camera";
+      socket.emit("voice:move", { to: group.id });
+      await startCall(group, hadCamera);
+    }
+  }
+
+  async function leaveGroup(dm) {
+    if (!window.confirm(`Leave "${dmTitle(dm, user)}"? You won't get its messages or calls anymore.`)) return;
+    try {
+      if (voice.channel?.id === dm.id) voice.leave();
+      await api(`/groups/${dm.id}/members/me`, { method: "DELETE" });
+      setDms((list) => list.filter((d) => d.id !== dm.id));
+      setHomeView("friends");
+    } catch (err) {
+      alert(err.message);
+    }
+  }
 
   // Hanging up on a DM call counts as declining it, so it doesn't ring again while the other person waits.
   const voiceChannelId = voice.channel?.id ?? null;
@@ -311,7 +383,7 @@ export default function Main({ user, config, onLogout, onUserChange }) {
   useEffect(() => {
     if (incomingId) {
       const dm = dmsRef.current.find((d) => d.id === incomingId);
-      if (dm) notify(dm.user.username, "Incoming call…");
+      if (dm) notify(dmTitle(dm, user), isGroup(dm) ? "Incoming group call…" : "Incoming call…");
     }
   }, [incomingId]);
 
@@ -338,6 +410,8 @@ export default function Main({ user, config, onLogout, onUserChange }) {
   if (isHome) {
     sidebar = (
       <HomeSidebar
+        me={user}
+        onCreateGroup={() => setModal({ type: "addPeople", dm: null })}
         dms={dms}
         homeView={homeView}
         unread={unread}
@@ -347,7 +421,15 @@ export default function Main({ user, config, onLogout, onUserChange }) {
       />
     );
     content = activeDm ? (
-      <DMView dm={activeDm} voice={voice} chat={chatProps(activeDm.id)} onCall={startCall} />
+      <DMView
+        dm={activeDm}
+        me={user}
+        voice={voice}
+        chat={chatProps(activeDm.id)}
+        onCall={startCall}
+        onAddPeople={(dm) => setModal({ type: "addPeople", dm })}
+        onLeaveGroup={leaveGroup}
+      />
     ) : (
       <FriendsView friends={friends} user={user} onMessage={messageFriend} onCall={callFriend} />
     );
@@ -412,6 +494,7 @@ export default function Main({ user, config, onLogout, onUserChange }) {
       {incomingCall && (
         <IncomingCall
           dm={incomingCall}
+          me={user}
           onAccept={() => startCall(incomingCall, false)}
           onDecline={() => setDeclinedCalls((set) => new Set(set).add(incomingCall.id))}
         />
@@ -426,6 +509,24 @@ export default function Main({ user, config, onLogout, onUserChange }) {
         />
       )}
       {modal?.type === "devices" && <DeviceSettingsModal voice={voice} onClose={() => setModal(null)} />}
+      {modal?.type === "addPeople" && (
+        <AddPeopleModal
+          title={
+            !modal.dm
+              ? "Start a group"
+              : voice.channel?.id === modal.dm.id
+                ? "Add people to the call"
+                : isGroup(modal.dm)
+                  ? "Add friends to this group"
+                  : "Add friends (makes a group)"
+          }
+          confirmLabel={!modal.dm ? "Create group" : "Add"}
+          friends={friends.friends}
+          existingIds={!modal.dm ? [user.id] : isGroup(modal.dm) ? modal.dm.members.map((m) => m.id) : [user.id, modal.dm.user.id]}
+          onConfirm={(ids) => addPeople(modal.dm, ids)}
+          onClose={() => setModal(null)}
+        />
+      )}
       {modal?.type === "profile" && (
         <ProfileModal user={user} onClose={() => setModal(null)} onSaved={onUserChange} />
       )}

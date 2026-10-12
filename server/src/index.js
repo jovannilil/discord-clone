@@ -6,9 +6,10 @@ import { randomUUID, randomBytes } from "node:crypto";
 import express from "express";
 import { config } from "./config.js";
 import { db, channelForMember } from "./db.js";
-import { requireAuth, signToken, publicUser, upsertUser, verifyGoogleCredential, backfillHandles } from "./auth.js";
+import { requireAuth, signToken, publicUser, upsertUser, verifyGoogleCredential, backfillHandles, NAME_MAX } from "./auth.js";
 import { setupRealtime, isOnline, voiceStatesForServer } from "./realtime.js";
 import { registerSocialRoutes } from "./social.js";
+import { APP_VERSION, clientDist } from "./version.js";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -65,7 +66,7 @@ app.post(
     const user = await upsertUser({
       googleId: payload.sub,
       email: payload.email ?? null,
-      username: cleanName(payload.name || payload.email?.split("@")[0] || "user", 32),
+      username: cleanName(payload.name || payload.email?.split("@")[0] || "user", NAME_MAX),
       avatar: payload.picture ?? null,
       handleHint: payload.email?.split("@")[0],
     });
@@ -78,7 +79,7 @@ app.post(
   "/api/auth/dev",
   route(async (req, res) => {
     if (!config.devLogin) return res.status(404).json({ error: "Not found" });
-    const username = cleanName(req.body?.username, 32);
+    const username = cleanName(req.body?.username, NAME_MAX);
     if (!username) return res.status(400).json({ error: "Pick a username" });
     const user = await upsertUser({ googleId: `dev:${username.toLowerCase()}`, username });
     res.json({ token: signToken(user), user: publicUser(user) });
@@ -238,16 +239,31 @@ app.get(
   })
 );
 
+// Which version of the app is deployed; open apps poll this to know when to refresh.
+app.get("/api/version", (req, res) => {
+  res.set("Cache-Control", "no-store").json({ version: APP_VERSION });
+});
+
 app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));
 
 // ---------- Serve the built React app ----------
 
-const clientDist = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "client", "dist");
 if (fs.existsSync(clientDist)) {
-  app.use(express.static(clientDist));
+  app.use(
+    express.static(clientDist, {
+      setHeaders(res, filePath) {
+        // index.html must always be re-checked so a refresh picks up a new deploy;
+        // files in /assets have a content hash in their name, so they can be cached forever.
+        if (filePath.endsWith(".html")) res.set("Cache-Control", "no-cache");
+        else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.set("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    })
+  );
   app.use((req, res, next) => {
     if (req.method !== "GET") return next();
-    res.sendFile(path.join(clientDist, "index.html"));
+    res.set("Cache-Control", "no-cache").sendFile(path.join(clientDist, "index.html"));
   });
 }
 

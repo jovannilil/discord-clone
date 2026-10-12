@@ -53,7 +53,7 @@ export default function UserArea({ user, voice, connected, onLogout, onEditProfi
       <div className="user-panel">
         <button className="user-panel-me" onClick={onEditProfile} title="Edit profile">
           <Avatar user={user} size={32} status={connected ? "online" : "offline"} />
-          <div className="truncate user-panel-name">
+          <div className="truncate user-panel-name" title={`${user.username} (@${user.handle})`}>
             <div className="truncate">{user.username}</div>
             <div className="muted small truncate">{connected ? `@${user.handle}` : "Reconnecting…"}</div>
           </div>

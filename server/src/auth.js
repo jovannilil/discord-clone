@@ -10,24 +10,25 @@ export const publicUser = (u) => ({ id: u.id, username: u.username, handle: u.ha
 
 // ---------- Unique @usernames ("handles") ----------
 
-export const HANDLE_RE = /^[a-z0-9_.]{2,32}$/;
+export const NAME_MAX = 25; // max length for display names and @usernames
+export const HANDLE_RE = /^[a-z0-9_.]{2,25}$/;
 
 export const normalizeHandle = (value) =>
   String(value ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9_.]/g, "")
-    .slice(0, 32);
+    .slice(0, NAME_MAX);
 
 /** Turns a name or email into a free handle, adding numbers if it's taken: "jj moran" -> "jjmoran" or "jjmoran4821". */
 export async function uniqueHandle(base) {
-  let root = normalizeHandle(base).slice(0, 26);
+  let root = normalizeHandle(base).slice(0, NAME_MAX - 4); // room for 4 digits
   if (root.length < 2) root = "user";
   let candidate = root;
   for (let i = 0; i < 25; i++) {
     if (!(await db.get("SELECT id FROM users WHERE handle = ?", [candidate]))) return candidate;
     candidate = `${root}${Math.floor(1000 + Math.random() * 9000)}`;
   }
-  return `${root}${Date.now().toString(36)}`;
+  return `${root.slice(0, NAME_MAX - 8)}${Date.now().toString(36)}`;
 }
 
 /** Gives a handle to accounts created before handles existed. */

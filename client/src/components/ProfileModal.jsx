@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api.js";
 import Modal from "./Modal.jsx";
 import Avatar from "./Avatar.jsx";
+import { NAME_MAX } from "../dm.js";
 
 /** Edit your display name and @username. */
 export default function ProfileModal({ user, onClose, onSaved }) {
@@ -33,7 +34,7 @@ export default function ProfileModal({ user, onClose, onSaved }) {
       </div>
       <form onSubmit={submit}>
         <label htmlFor="display-name">Display name</label>
-        <input id="display-name" value={username} onChange={(e) => setUsername(e.target.value)} maxLength={32} />
+        <input id="display-name" value={username} onChange={(e) => setUsername(e.target.value)} maxLength={NAME_MAX} />
 
         <label htmlFor="handle">Username</label>
         <div className="handle-input">
@@ -42,12 +43,12 @@ export default function ProfileModal({ user, onClose, onSaved }) {
             id="handle"
             value={handle}
             onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""))}
-            maxLength={32}
+            maxLength={NAME_MAX}
             spellCheck={false}
             autoComplete="off"
           />
         </div>
-        <p className="muted small">Friends add you with this. Lowercase letters, numbers, _ and . only.</p>
+        <p className="muted small">Friends add you with this. Up to {NAME_MAX} characters: lowercase letters, numbers, _ and . only.</p>
 
         {error && <p className="error">{error}</p>}
         <div className="modal-actions">

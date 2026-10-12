@@ -709,12 +709,12 @@ button.member { width: 100%; text-align: left; }
 }
 .dm-call .tiles {
   padding: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 360px));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   grid-auto-rows: minmax(0, 1fr);
-  justify-content: center;
+  justify-items: center;
   overflow: hidden;
 }
-.dm-call .tile { aspect-ratio: auto; min-height: 0; }
+.dm-call .tile { aspect-ratio: auto; min-height: 0; width: 100%; max-width: 420px; }
 .dm-call .voice-controls { padding: 10px; }
 .dm-call .round-btn { width: 48px; height: 48px; }
 .dm-call-banner {
@@ -825,3 +825,56 @@ select:focus { outline: 2px solid var(--accent); }
 .mic-meter { height: 8px; margin: 10px 0 6px; border-radius: 4px; background: var(--bg-rail); overflow: hidden; }
 .mic-meter div { height: 100%; background: var(--green); transition: width 0.08s linear; }
 .modal { max-height: calc(100vh - 32px); overflow-y: auto; }
+
+/* ---------- Group DMs ---------- */
+.dm-layout { flex: 1; display: flex; min-width: 0; min-height: 0; }
+.dm-layout .dm-view { min-width: 0; }
+.dm-item-text { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.2; }
+.dm-item-text .small { font-weight: 400; }
+.in-call-tag { margin-left: auto; color: var(--green); display: grid; }
+.picker-hint { margin: 0 0 8px; }
+.picker-list { max-height: 300px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  text-align: left;
+}
+.picker-row:hover:not(:disabled) { background: var(--bg-hover); }
+.picker-row.checked { background: var(--bg-active); }
+.picker-name { flex: 1; color: var(--text-strong); }
+.picker-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 2px solid var(--text-muted);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.picker-row.checked .picker-check { background: var(--accent); border-color: var(--accent); color: white; }
+@media (max-width: 1100px) {
+  .dm-layout .members { display: none; }
+}
+
+/* ---------- Auto-update banner ---------- */
+.update-banner {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 0 0 8px 8px;
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.update-banner .btn { padding: 4px 12px; background: white; color: var(--accent); }

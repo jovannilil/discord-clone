@@ -11,6 +11,7 @@ import "./config.js"; // loads .env before DATABASE_URL is read
 //   - users.username is the display name; users.handle is the unique @username used to add friends.
 //   - A direct message is a channel with type 'dm', no server, and two rows in dm_members.
 //     Its name is "<userIdA>:<userIdB>" (sorted) so there is only ever one DM per pair.
+//   - A group DM is a channel with type 'group', no server, and up to 10 rows in dm_members.
 //   - A friendship is stored as two rows in friends (one per direction).
 
 const SQLITE_SCHEMA = `
@@ -32,7 +33,7 @@ const SQLITE_SCHEMA = `
   );
   CREATE TABLE IF NOT EXISTS channels (
     id TEXT PRIMARY KEY, server_id TEXT REFERENCES servers(id) ON DELETE CASCADE,
-    name TEXT NOT NULL, type TEXT NOT NULL CHECK (type IN ('text', 'voice', 'dm')), created_at INTEGER NOT NULL
+    name TEXT NOT NULL, type TEXT NOT NULL CHECK (type IN ('text', 'voice', 'dm', 'group')), created_at INTEGER NOT NULL
   );
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,7 +98,7 @@ const POSTGRES_SCHEMA = `
   CREATE UNIQUE INDEX IF NOT EXISTS idx_users_handle ON users(handle);
   ALTER TABLE channels ALTER COLUMN server_id DROP NOT NULL;
   ALTER TABLE channels DROP CONSTRAINT IF EXISTS channels_type_check;
-  ALTER TABLE channels ADD CONSTRAINT channels_type_check CHECK (type IN ('text', 'voice', 'dm'));
+  ALTER TABLE channels ADD CONSTRAINT channels_type_check CHECK (type IN ('text', 'voice', 'dm', 'group'));
   CREATE UNIQUE INDEX IF NOT EXISTS idx_channels_dm ON channels(name) WHERE type = 'dm';
   CREATE TABLE IF NOT EXISTS dm_members (
     channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,

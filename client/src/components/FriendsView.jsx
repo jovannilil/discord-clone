@@ -8,7 +8,7 @@ function FriendRow({ person, status, children, onClick }) {
     <div className="friend-row" onClick={onClick} role={onClick ? "button" : undefined}>
       <Avatar user={person} size={36} status={status === "online" || status === "offline" ? status : undefined} />
       <div className="friend-row-info truncate">
-        <div className="friend-row-name truncate">
+        <div className="friend-row-name truncate" title={`${person.username} (@${person.handle})`}>
           {person.username} <span className="muted handle">@{person.handle}</span>
         </div>
         <div className="muted small">{statusText(person, status)}</div>
@@ -75,7 +75,7 @@ function AddFriend({ myHandle }) {
             setResult(null);
           }}
           placeholder="Enter a username, like jjmoran"
-          maxLength={33}
+          maxLength={26}
           autoComplete="off"
           spellCheck={false}
         />

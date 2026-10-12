@@ -66,7 +66,7 @@ export default function Login({ config, onAuth }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Pick a username"
-                maxLength={32}
+                maxLength={25}
                 autoComplete="off"
               />
               <button className="btn primary full" disabled={busy || !username.trim()}>

@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import { db, channelForMember, roomsForChannel } from "./db.js";
 import { userFromToken, publicUser } from "./auth.js";
+import { APP_VERSION } from "./version.js";
 
 // Socket.IO rooms used:
 //   user:<userId>      every socket of a user (DMs, friend updates, joining new server rooms)
@@ -69,6 +70,7 @@ export function setupRealtime(httpServer) {
   io.on("connection", async (socket) => {
     const user = socket.data.user;
     setProfile(user);
+    socket.emit("app:version", APP_VERSION); // lets open apps notice a new deploy right after reconnecting
     const me = () => profiles.get(user.id);
 
     // ---------- Voice / video (WebRTC signaling) ----------
@@ -98,7 +100,7 @@ export function setupRealtime(httpServer) {
       safe(async ({ channelId, muted } = {}, ack) => {
         const reply = asAck(ack);
         const channel = await channelForMember(channelId, user.id);
-        if (!channel || (channel.type !== "voice" && channel.type !== "dm")) {
+        if (!channel || !["voice", "dm", "group"].includes(channel.type)) {
           return reply({ error: "Voice channel not found" });
         }
         const rooms = await roomsForChannel(channel);
@@ -121,6 +123,14 @@ export function setupRealtime(httpServer) {
     );
 
     socket.on("voice:leave", leaveVoice);
+
+    // "Add people" on a 1-on-1 call turns it into a group: tell the others in the call to follow.
+    // Each of them re-joins with voice:join, which checks they're actually in the new group.
+    socket.on("voice:move", ({ to } = {}) => {
+      const current = socket.data.voice;
+      if (!current || typeof to !== "string") return;
+      socket.to(`voice:${current.channelId}`).emit("voice:moved", { from: current.channelId, to });
+    });
 
     socket.on("voice:update", ({ muted, video } = {}) => {
       const current = socket.data.voice;
@@ -148,7 +158,7 @@ export function setupRealtime(httpServer) {
         if (!text || text.length > 2000) return reply({ error: "Messages must be 1–2000 characters" });
 
         const channel = await channelForMember(channelId, user.id);
-        if (!channel || (channel.type !== "text" && channel.type !== "dm")) {
+        if (!channel || !["text", "dm", "group"].includes(channel.type)) {
           return reply({ error: "Channel not found" });
         }
 
@@ -161,7 +171,7 @@ export function setupRealtime(httpServer) {
         const message = {
           id: Number(row.id),
           channelId: channel.id,
-          dm: channel.type === "dm",
+          dm: channel.type === "dm" || channel.type === "group",
           content: text,
           createdAt,
           author: me(),

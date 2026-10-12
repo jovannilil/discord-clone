@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import Avatar from "./Avatar.jsx";
+import { dmTitle, isGroup } from "../dm.js";
 import { PhoneIcon, PhoneOffIcon } from "./icons.jsx";
 
 // A simple phone-style ring made with the Web Audio API (no sound files needed).
@@ -32,10 +33,12 @@ function startRinging() {
   };
 }
 
-export default function IncomingCall({ dm, onAccept, onDecline }) {
+export default function IncomingCall({ dm, me, onAccept, onDecline }) {
   useEffect(() => startRinging(), [dm.id]);
 
-  const caller = dm.voice?.find((p) => p.user.id === dm.user.id)?.user ?? dm.user;
+  // Whoever is already in the call (for a group, the first person who joined).
+  const caller = dm.voice?.find((p) => p.user.id !== me.id)?.user ?? dm.user ?? dm.members?.[0];
+  const group = isGroup(dm);
   const withVideo = dm.voice?.some((p) => p.video);
 
   return (
@@ -44,7 +47,9 @@ export default function IncomingCall({ dm, onAccept, onDecline }) {
         <Avatar user={caller} size={80} />
       </div>
       <h3>{caller.username}</h3>
-      <p className="muted">Incoming {withVideo ? "video " : ""}call…</p>
+      <p className="muted">
+        {group ? `Group call · ${dmTitle(dm, me)}` : `Incoming ${withVideo ? "video " : ""}call…`}
+      </p>
       <div className="incoming-call-actions">
         <button className="round-btn hangup" title="Decline" aria-label="Decline" onClick={onDecline}>
           <PhoneOffIcon size={22} />

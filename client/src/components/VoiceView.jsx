@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import Avatar from "./Avatar.jsx";
-import { SpeakerIcon, MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, ScreenIcon, PhoneOffIcon, SettingsIcon } from "./icons.jsx";
+import { SpeakerIcon, MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, ScreenIcon, PhoneOffIcon, SettingsIcon, UserPlusIcon } from "./icons.jsx";
 
 function Tile({ participant, stream, mirror, connecting }) {
   const videoRef = useRef(null);
@@ -68,7 +68,7 @@ export default function VoiceView({ channel, voice, participantsHere, onJoin }) 
 }
 
 /** The call itself: everyone's video/avatar tiles plus mute / camera / screen / hang up. */
-export function CallPanel({ voice }) {
+export function CallPanel({ voice, onAddPeople }) {
   return (
     <>
       <div className="tiles">
@@ -109,6 +109,11 @@ export function CallPanel({ voice }) {
         >
           <ScreenIcon size={22} />
         </button>
+        {onAddPeople && (
+          <button className="round-btn" title="Add people to the call" aria-label="Add people to the call" onClick={onAddPeople}>
+            <UserPlusIcon size={22} />
+          </button>
+        )}
         <button className="round-btn" title="Voice & Video settings" aria-label="Voice & Video settings" onClick={voice.openSettings}>
           <SettingsIcon size={22} />
         </button>
