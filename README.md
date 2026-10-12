@@ -1,6 +1,6 @@
-# Discord Clone
+# Voxoria Chat
 
-A starter Discord clone: Google login, servers with invite codes, real-time text channels,
+A small chat app for friends: Google login, servers with invite codes, real-time text channels,
 and voice channels with camera + screen sharing.
 
 **Stack:** React (Vite) · Node.js + Express · Socket.IO · SQLite (built into Node 22.13+) · WebRTC
@@ -16,7 +16,7 @@ and voice channels with camera + screen sharing.
 
 ## Live app
 
-- **Website:** https://discord-clone-oxb2.onrender.com (hosted on Render's free plan, database on Neon)
+- **Website:** https://desktop-vrdnin2.tail467931.ts.net (hosted from my PC with the Host Dashboard + Tailscale Funnel, database on Neon)
 - **Desktop app:** the website has a "Download" button (Windows) that serves the installer from
   GitHub Releases. The desktop app loads the website, so it always shows the newest version.
   To publish a new installer (only needed when `desktop/` changes): bump `version` in

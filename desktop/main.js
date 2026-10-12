@@ -10,9 +10,9 @@ const SERVER_URL = process.env.SERVER_URL || config.serverUrl;
 const serverOrigin = new URL(SERVER_URL).origin;
 
 // Google blocks sign-in from user agents that say "Electron", so present as plain Chrome.
-// "DiscordCloneDesktop" lets the website know it's inside the app (to hide the "Download app" button).
+// "VoxoriaChatDesktop" lets the website know it's inside the app (to hide the "Download app" button).
 app.userAgentFallback =
-  app.userAgentFallback.replace(/ Electron\/\S+/, "").replace(/ discord-clone-desktop\/\S+/, "") + " DiscordCloneDesktop";
+  app.userAgentFallback.replace(/ Electron\/\S+/, "").replace(/ voxoria-chat-desktop\/\S+/, "") + " VoxoriaChatDesktop";
 
 // Many Linux setups (e.g. Ubuntu 24.04+) block Chromium's sandbox helper, which makes the app silently
 // fail to open. This app only shows our own website, so running without that sandbox is fine.
@@ -39,7 +39,7 @@ function createWindow() {
     minWidth: 940,
     minHeight: 560,
     backgroundColor: "#313338",
-    title: "Discord Clone",
+    title: "Voxoria Chat",
     icon: path.join(__dirname, "icon.png"),
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, sandbox: true },

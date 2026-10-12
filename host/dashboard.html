@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Host Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2;
+    --surface: #fcfcfb;
+    --surface-2: #f0efec;
+    --border: #e2e1dc;
+    --text: #0b0b0b;
+    --text-2: #52514e;
+    --text-3: #7a7974;
+    --grid: #e7e6e1;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --good: #0ca30c;
+    --good-text: #006300;
+    --warning: #fab219;
+    --warning-text: #8a5a00;
+    --critical: #d03b3b;
+    --critical-text: #b42d2d;
+    --accent: #2a78d6;
+    --accent-text: #ffffff;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #121211;
+      --surface: #1a1a19;
+      --surface-2: #232321;
+      --border: #2e2e2b;
+      --text: #ffffff;
+      --text-2: #c3c2b7;
+      --text-3: #8f8e86;
+      --grid: #2a2a27;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --good-text: #3fcf3f;
+      --warning-text: #fab219;
+      --critical-text: #f07272;
+      --accent: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #121211;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --border: #2e2e2b;
+    --text: #ffffff;
+    --text-2: #c3c2b7;
+    --text-3: #8f8e86;
+    --grid: #2a2a27;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --good-text: #3fcf3f;
+    --warning-text: #fab219;
+    --critical-text: #f07272;
+    --accent: #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px; }
+  h1 { font-size: 20px; margin: 0; font-weight: 650; }
+  h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+  .muted { color: var(--text-3); }
+  a { color: var(--accent); }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+  header .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; background: var(--surface-2); }
+  .pill svg { width: 14px; height: 14px; }
+  .pill.good { color: var(--good-text); }
+  .pill.warn { color: var(--warning-text); }
+  .pill.bad { color: var(--critical-text); }
+  .pill.off { color: var(--text-2); }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: inherit; font-weight: 600; border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+  button:hover:not(:disabled) { background: var(--surface-2); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); min-width: 110px; }
+  button.primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--accent); }
+  button.danger { background: var(--critical); border-color: var(--critical); color: #fff; min-width: 110px; }
+  button.danger:hover:not(:disabled) { filter: brightness(1.08); background: var(--critical); }
+  button.small { padding: 4px 10px; font-size: 12px; }
+
+  .address { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .address code { font: 15px var(--mono); word-break: break-all; }
+
+  .setup { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .setup li { display: flex; gap: 10px; align-items: flex-start; }
+  .setup li svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+  .setup .done { color: var(--text-3); }
+  .setup .done svg { color: var(--good); }
+  .setup .todo svg { color: var(--warning-text); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile .label { font-size: 12px; color: var(--text-2); }
+  .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .tile .sub { font-size: 12px; color: var(--text-3); margin-top: 2px; overflow-wrap: anywhere; }
+
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  .chart { position: relative; height: 150px; }
+  .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .chart .gridline { stroke: var(--grid); stroke-width: 1; }
+  .chart .axis-label { fill: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .chart .crosshair { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 3; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-2); margin: -4px 0 8px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 3px; border-radius: 2px; background: var(--c); margin-right: 6px; vertical-align: middle; }
+  .tooltip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 8px rgb(0 0 0 / .15); display: none; z-index: 2; }
+  .tooltip .row { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  .tooltip .sw { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+  .empty-chart { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 13px; }
+
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  th { font-size: 12px; color: var(--text-2); font-weight: 600; }
+  td.num, th.num { text-align: right; }
+  tr:last-child td { border-bottom: none; }
+  .meter { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; margin: 6px 0 4px; }
+  .meter > div { height: 100%; border-radius: 4px; background: var(--series-1); }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-variant-numeric: tabular-nums; }
+  .kv dt { color: var(--text-2); }
+  .kv dd { margin: 0; text-align: right; }
+
+  .logbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; }
+  .chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .logbar input[type="search"] { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); flex: 1; min-width: 140px; }
+  .logbar label { font-size: 12px; color: var(--text-2); display: flex; gap: 4px; align-items: center; }
+  #logs { height: 340px; overflow: auto; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; font: 12px/1.55 var(--mono); }
+  #logs .line { white-space: pre-wrap; word-break: break-word; }
+  #logs .time { color: var(--text-3); margin-right: 8px; }
+  #logs .tag { display: inline-block; min-width: 64px; margin-right: 6px; color: var(--text-3); }
+  #logs .error { color: var(--critical-text); }
+  #logs .system .msg { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Host dashboard</h1>
+    <span id="status" class="pill off"></span>
+    <span id="uptime" class="muted"></span>
+    <span class="spacer"></span>
+    <div class="buttons">
+      <button id="toggle" class="primary">Start</button>
+      <button id="rebuild" title="Rebuild the site from the latest code, then restart it">Update site</button>
+      <button id="settings" title="Open host/host.env in Notepad">Edit settings</button>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Site address</h2>
+    <div id="address" class="address"></div>
+  </section>
+
+  <section class="card" id="setupCard" hidden>
+    <h2>Setup</h2>
+    <ul class="setup" id="setup"></ul>
+  </section>
+
+  <section class="tiles">
+    <div class="card tile"><div class="label">Server CPU</div><div class="value" id="tCpu">–</div><div class="sub" id="tCpuSub"></div></div>
+    <div class="card tile"><div class="label">Server memory</div><div class="value" id="tRam">–</div><div class="sub" id="tRamSub"></div></div>
+    <div class="card tile"><div class="label">Internet right now</div><div class="value" id="tNet">–</div><div class="sub" id="tNetSub"></div></div>
+    <div class="card tile"><div class="label">Data used today</div><div class="value" id="tToday">–</div><div class="sub" id="tTodaySub"></div></div>
+    <div class="card tile"><div class="label">Online now</div><div class="value" id="tOnline">–</div><div class="sub" id="tOnlineSub"></div></div>
+    <div class="card tile"><div class="label">In a call</div><div class="value" id="tCalls">–</div><div class="sub" id="tCallsSub"></div></div>
+  </section>
+
+  <section class="charts">
+    <div class="card"><h2>Server CPU · % of your PC · last 10 min</h2><div class="chart" id="cCpu"></div></div>
+    <div class="card"><h2>Server memory · last 10 min</h2><div class="chart" id="cRam"></div></div>
+    <div class="card">
+      <h2>Internet traffic · last 10 min</h2>
+      <div class="legend"><span style="--c: var(--series-1)">Upload (sent to people)</span><span style="--c: var(--series-2)">Download (received)</span></div>
+      <div class="chart" id="cNet"></div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <h2>What's running on your PC</h2>
+      <table>
+        <thead><tr><th>Program</th><th class="num">CPU</th><th class="num">Memory</th></tr></thead>
+        <tbody id="procs"></tbody>
+      </table>
+      <p class="muted" style="margin:10px 0 0;font-size:12px" id="pcLine"></p>
+    </div>
+    <div class="card">
+      <h2>Database (Neon)</h2>
+      <div id="db" class="muted">Shows up once the server is running.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Logs</h2>
+    <div class="logbar">
+      <button class="chip" data-filter="all" aria-pressed="true">All</button>
+      <button class="chip" data-filter="error" aria-pressed="false">Errors</button>
+      <button class="chip" data-filter="http" aria-pressed="false">Requests</button>
+      <button class="chip" data-filter="info" aria-pressed="false">Server</button>
+      <button class="chip" data-filter="system" aria-pressed="false">Dashboard</button>
+      <input type="search" id="logSearch" placeholder="Search logs">
+      <label><input type="checkbox" id="autoscroll" checked> Follow</label>
+      <button class="small" id="copyLogs">Copy</button>
+    </div>
+    <div id="logs" role="log" aria-live="off"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+const ICONS = {
+  good: '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="5"/></svg>',
+  warn: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2.5a5.5 5.5 0 1 0 5.5 5.5"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="1s" repeatCount="indefinite"/></path></svg>',
+  bad: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+  off: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="5"/></svg>',
+  check: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg>',
+  todo: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M10 6v5M10 13.5v.5"/></svg>',
+};
+
+const STATUS = {
+  stopped: ["off", "Stopped"],
+  building: ["warn", "Building the site"],
+  starting: ["warn", "Starting"],
+  running: ["good", "Running"],
+  stopping: ["warn", "Stopping"],
+  crashed: ["bad", "Stopped with an error"],
+};
+
+function fmtBytes(b) {
+  if (!b) return "0 B";
+  const u = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(u.length - 1, Math.floor(Math.log(b) / Math.log(1024)));
+  const v = b / 1024 ** i;
+  return `${v >= 100 || i === 0 ? v.toFixed(0) : v.toFixed(1)} ${u[i]}`;
+}
+const fmtRate = (b) => `${fmtBytes(b)}/s`;
+const fmtPct = (p) => (p == null ? "–" : p < 0.05 ? "0%" : p < 10 ? `${p.toFixed(1)}%` : `${p.toFixed(0)}%`);
+function fmtDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  if (d) return `${d}d ${h}h`;
+  if (h) return `${h}h ${m}m`;
+  if (m) return `${m}m`;
+  return `${s}s`;
+}
+const timeOf = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+async function post(action) {
+  await fetch(`/api/${action}`, { method: "POST", headers: { "X-Host-Dashboard": "1" } });
+  setTimeout(refresh, 300);
+}
+
+// ---------- Charts (inline SVG: line per series, crosshair + tooltip on hover) ----------
+
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const p = 10 ** Math.floor(Math.log10(v));
+  return [1, 2, 2.5, 5, 10].map((m) => m * p).find((m) => m >= v);
+}
+
+const charts = {};
+function drawChart(id, points, series, fmt, minMax = 0) {
+  const el = $(id);
+  const c = (charts[id] ??= { el, points: [], series, fmt });
+  c.points = points;
+  const W = el.clientWidth, H = el.clientHeight;
+  const padL = 58, padR = 8, padT = 6, padB = 18;
+  const iw = Math.max(10, W - padL - padR), ih = H - padT - padB;
+  const max = niceMax(Math.max(minMax, ...points.flatMap((p) => series.map((s) => p[s.key] || 0))) * 1.1);
+  const t1 = Date.now(), t0 = t1 - 10 * 60 * 1000;
+  const x = (t) => padL + ((t - t0) / (t1 - t0)) * iw;
+  const y = (v) => padT + ih - (v / max) * ih;
+  c.geom = { x, y, padL, padT, iw, ih, t0, t1 };
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(el.closest(".card").querySelector("h2").textContent)}">`;
+  for (let i = 0; i <= 3; i++) {
+    const v = (max / 3) * i;
+    svg += `<line class="gridline" x1="${padL}" x2="${padL + iw}" y1="${y(v)}" y2="${y(v)}"/>`;
+    svg += `<text class="axis-label" x="${padL - 8}" y="${y(v) + 4}" text-anchor="end">${esc(fmt(v))}</text>`;
+  }
+  for (const [label, t] of [["10 min ago", t0], ["5 min", t0 + 5 * 60e3], ["now", t1]]) {
+    svg += `<text class="axis-label" x="${x(t)}" y="${H - 2}" text-anchor="${t === t0 ? "start" : t === t1 ? "end" : "middle"}">${label}</text>`;
+  }
+  for (const s of series) {
+    if (points.length < 2) break;
+    const d = points.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p[s.key] || 0).toFixed(1)}`).join("");
+    svg += `<path d="${d}" fill="none" stroke="var(${s.color})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  svg += `<g class="hover" style="display:none"><line class="crosshair" y1="${padT}" y2="${padT + ih}"/>${series
+    .map((s) => `<circle r="4" fill="var(${s.color})" stroke="var(--surface)" stroke-width="2"/>`)
+    .join("")}</g>`;
+  svg += `<rect x="${padL}" y="0" width="${iw}" height="${H}" fill="transparent"/></svg>`;
+  el.innerHTML = svg + `<div class="tooltip"></div>` + (points.length < 2 ? `<div class="empty-chart">No data yet. Start the server to see it here.</div>` : "");
+
+  const svgEl = el.querySelector("svg"), hover = el.querySelector(".hover"), tip = el.querySelector(".tooltip");
+  const showAt = (clientX) => {
+    if (c.points.length < 2) return;
+    const r = svgEl.getBoundingClientRect();
+    const mx = ((clientX - r.left) / r.width) * W;
+    const t = c.geom.t0 + ((mx - padL) / iw) * (c.geom.t1 - c.geom.t0);
+    let best = c.points[0];
+    for (const p of c.points) if (Math.abs(p.t - t) < Math.abs(best.t - t)) best = p;
+    const px = c.geom.x(best.t);
+    hover.style.display = "";
+    hover.querySelector("line").setAttribute("x1", px);
+    hover.querySelector("line").setAttribute("x2", px);
+    hover.querySelectorAll("circle").forEach((ci, i) => {
+      ci.setAttribute("cx", px);
+      ci.setAttribute("cy", c.geom.y(best[series[i].key] || 0));
+    });
+    tip.innerHTML = `<div class="muted">${timeOf(best.t)}</div>` + series
+      .map((s) => `<div class="row"><span class="sw" style="--c: var(${s.color})"></span>${s.label ? esc(s.label) + ": " : ""}<b>${esc(fmt(best[s.key] || 0))}</b></div>`)
+      .join("");
+    tip.style.display = "block";
+    const left = (px / W) * r.width;
+    tip.style.left = `${Math.min(Math.max(0, left + 12), r.width - tip.offsetWidth)}px`;
+    tip.style.top = `4px`;
+  };
+  svgEl.addEventListener("mousemove", (e) => showAt((c.mouseX = e.clientX)));
+  svgEl.addEventListener("mouseleave", () => {
+    c.mouseX = null;
+    hover.style.display = "none";
+    tip.style.display = "none";
+  });
+  if (c.mouseX != null) showAt(c.mouseX); // keep the tooltip up across the 2-second redraws
+}
+
+// ---------- State ----------
+
+let last = null;
+function render(s) {
+  last = s;
+  const [cls, label] = STATUS[s.status] ?? ["off", s.status];
+  $("status").className = `pill ${cls}`;
+  $("status").innerHTML = `${ICONS[cls]}${label}`;
+  $("uptime").textContent =
+    s.startedAt && s.status === "running"
+      ? `up ${fmtDuration(Date.now() - s.startedAt)}${s.keepingAwake ? " · keeping your PC awake while hosting" : ""}`
+      : "";
+
+  const on = s.wanted || ["building", "starting", "running"].includes(s.status);
+  const toggle = $("toggle");
+  toggle.textContent = on ? "Stop" : "Start";
+  toggle.className = on ? "danger" : "primary";
+  toggle.disabled = s.status === "stopping" || s.status === "building";
+  toggle.dataset.action = on ? "stop" : "start";
+  $("rebuild").disabled = s.status === "building" || s.status === "stopping";
+
+  // Address
+  let addr;
+  if (s.publicUrl && s.status === "running") {
+    addr = `<code>${esc(s.publicUrl)}</code><button class="small" id="copyUrl">Copy</button><a href="${esc(s.publicUrl)}" target="_blank" rel="noopener">Open</a>
+      <span class="muted">Anyone with this link can reach the site.</span>`;
+  } else if (s.status === "running") {
+    addr = `<code>${esc(s.localUrl)}</code><a href="${esc(s.localUrl)}" target="_blank" rel="noopener">Open</a>
+      <span class="muted">Only works on this PC until Tailscale Funnel is on (see Setup).</span>`;
+  } else {
+    addr = `<span class="muted">The site is offline. Press Start to put it online.</span>`;
+  }
+  if ($("address").dataset.html !== addr) {
+    $("address").innerHTML = addr;
+    $("address").dataset.html = addr;
+    $("copyUrl")?.addEventListener("click", () => navigator.clipboard.writeText(s.publicUrl));
+  }
+
+  // Setup checklist
+  const ck = s.checks;
+  // [done, text, show]
+  const steps = [
+    [ck.databaseUrl, `Paste your Neon <b>DATABASE_URL</b> into the settings file. Press <b>Edit settings</b>, paste it after <code>DATABASE_URL=</code>, and save.`, true],
+    [ck.tailscaleInstalled, `Install Tailscale: <a href="https://tailscale.com/download/windows" target="_blank" rel="noopener">tailscale.com/download</a>. It's free and gives the site a permanent web address.`, true],
+    [ck.tailscaleRunning, `Sign in to Tailscale. Click its icon by the clock and log in.`, ck.tailscaleInstalled],
+    [false, `Allow Funnel for this PC in your Tailscale account: <a href="${esc(ck.actionUrl || "")}" target="_blank" rel="noopener">open the Tailscale page</a>. The site goes online as soon as you allow it.`, Boolean(ck.actionUrl)],
+  ].filter(([, , show]) => show);
+  const showSetup = steps.some(([done]) => !done);
+  $("setupCard").hidden = !showSetup;
+  if (showSetup) {
+    const html = steps
+      .map(([done, text]) => `<li class="${done ? "done" : "todo"}">${done ? ICONS.check : ICONS.todo}<span>${text}</span></li>`)
+      .join("");
+    if ($("setup").dataset.html !== html) {
+      $("setup").innerHTML = html;
+      $("setup").dataset.html = html;
+    }
+  }
+
+  // Tiles
+  const n = s.now;
+  const running = s.status === "running";
+  $("tCpu").textContent = running ? fmtPct(n.serverCpu) : "–";
+  $("tCpuSub").textContent = running ? `of your whole PC (${s.cores} threads). Whole PC: ${fmtPct(n.pcCpu)}` : "Server is off";
+  $("tRam").textContent = running ? fmtBytes(n.serverRam) : "–";
+  $("tRamSub").textContent = `PC: ${fmtBytes(n.pcRamUsed)} of ${fmtBytes(n.pcRamTotal)} used`;
+  $("tNet").textContent = running ? `↑ ${fmtRate(n.up)}` : "–";
+  $("tNetSub").textContent = running ? `↓ ${fmtRate(n.down)} received` : "";
+  const u = s.usage;
+  $("tToday").textContent = fmtBytes(u.today.in + u.today.out);
+  $("tTodaySub").textContent = `↑ ${fmtBytes(u.today.out)} ↓ ${fmtBytes(u.today.in)} · This month: ${fmtBytes(u.month.in + u.month.out)}`;
+  $("tOnline").textContent = running ? s.online.length : "–";
+  $("tOnlineSub").textContent = running ? (s.online.join(", ") || "Nobody right now") + ` · ${s.messagesSent} messages sent this run` : "";
+  const inCall = s.calls.flat();
+  $("tCalls").textContent = running ? inCall.length : "–";
+  $("tCallsSub").textContent = running
+    ? s.calls.length
+      ? s.calls.map((c) => c.map((p) => p.username + (p.video ? " (video)" : "")).join(", ")).join(" · ") + " · Calls are peer-to-peer, so they barely touch the server"
+      : "No calls right now"
+    : "";
+
+  // Charts
+  const pts = s.history;
+  drawChart("cCpu", pts, [{ key: "serverCpu", color: "--series-1" }], fmtPct, 1);
+  drawChart("cRam", pts, [{ key: "serverRam", color: "--series-1" }], fmtBytes, 50 * 1024 * 1024);
+  drawChart("cNet", pts, [
+    { key: "up", color: "--series-1", label: "Upload" },
+    { key: "down", color: "--series-2", label: "Download" },
+  ], fmtRate, 1024);
+
+  // Processes
+  $("procs").innerHTML = s.processes
+    .map((p) => `<tr><td>${esc(p.label)}${p.running ? "" : ` <span class="muted">(not running)</span>`}</td>
+      <td class="num">${p.running ? fmtPct(p.cpu) : "–"}</td><td class="num">${p.running && p.ram ? fmtBytes(p.ram) : "–"}</td></tr>`)
+    .join("");
+  $("pcLine").textContent = `Whole PC right now: CPU ${fmtPct(n.pcCpu)}, memory ${fmtBytes(n.pcRamUsed)} of ${fmtBytes(n.pcRamTotal)}. CPU % is out of your whole PC.`;
+
+  // Database
+  const d = s.database;
+  if (d) {
+    const limit = 512 * 1024 * 1024;
+    const pct = Math.min(100, (d.bytes / limit) * 100);
+    $("db").className = "";
+    $("db").innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-variant-numeric:tabular-nums"><b>${fmtBytes(d.bytes)} used</b><span class="muted">${d.kind === "postgres" ? "of 512 MB free plan" : "local SQLite file"}</span></div>
+      ${d.kind === "postgres" ? `<div class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct.toFixed(0)}"><div style="width:${pct}%"></div></div>
+      <div class="muted" style="font-size:12px;margin-bottom:10px">${pct.toFixed(1)}% of Neon's free storage</div>` : ""}
+      <dl class="kv"><dt>Uploaded files</dt><dd>${d.files} (${fmtBytes(d.fileBytes)})</dd><dt>Messages</dt><dd>${d.messages.toLocaleString()}</dd><dt>Accounts</dt><dd>${d.users}</dd></dl>`;
+  } else {
+    $("db").className = "muted";
+    $("db").textContent = running ? "Reading the database..." : "Shows up once the server is running.";
+  }
+}
+
+async function refresh() {
+  try {
+    render(await (await fetch("/api/state")).json());
+  } catch {
+    $("status").className = "pill bad";
+    $("status").innerHTML = `${ICONS.bad}Dashboard closed`;
+    $("toggle").disabled = true;
+  }
+}
+
+// ---------- Logs ----------
+
+let logSeq = 0;
+const logLines = [];
+let filter = "all";
+const TAGS = { info: "server", error: "error", http: "request", system: "dashboard" };
+
+function lineHtml(l) {
+  return `<div class="line ${l.level}"><span class="time">${timeOf(l.t)}</span><span class="tag">${TAGS[l.level] ?? l.level}</span><span class="msg">${esc(l.text)}</span></div>`;
+}
+function visible(l) {
+  const q = $("logSearch").value.trim().toLowerCase();
+  return (filter === "all" || l.level === filter) && (!q || l.text.toLowerCase().includes(q));
+}
+function redrawLogs() {
+  const shown = logLines.filter(visible);
+  $("logs").innerHTML = shown.length ? shown.slice(-1500).map(lineHtml).join("") : `<div class="muted">Nothing here yet.</div>`;
+  if ($("autoscroll").checked) $("logs").scrollTop = $("logs").scrollHeight;
+}
+async function pollLogs() {
+  try {
+    const fresh = await (await fetch(`/api/logs?after=${logSeq}`)).json();
+    if (fresh.length) {
+      logSeq = fresh.at(-1).seq;
+      logLines.push(...fresh);
+      if (logLines.length > 2000) logLines.splice(0, logLines.length - 2000);
+      redrawLogs();
+    }
+  } catch {}
+}
+
+document.querySelectorAll(".chip").forEach((b) =>
+  b.addEventListener("click", () => {
+    filter = b.dataset.filter;
+    document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+    redrawLogs();
+  })
+);
+$("logSearch").addEventListener("input", redrawLogs);
+$("copyLogs").addEventListener("click", () =>
+  navigator.clipboard.writeText(logLines.filter(visible).map((l) => `${timeOf(l.t)} [${TAGS[l.level] ?? l.level}] ${l.text}`).join("\n"))
+);
+$("toggle").addEventListener("click", (e) => post(e.currentTarget.dataset.action));
+$("rebuild").addEventListener("click", () => post("rebuild"));
+$("settings").addEventListener("click", () => post("settings"));
+window.addEventListener("resize", () => last && render(last));
+
+refresh();
+pollLogs();
+setInterval(refresh, 2000);
+setInterval(pollLogs, 1000);
+</script>
+</body>
+</html>

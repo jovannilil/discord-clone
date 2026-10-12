@@ -1,5 +1,5 @@
-// Uploads desktop/dist/Discord-Clone-Setup.exe to a GitHub Release, so the website's
-// "Download" button (which points at .../releases/latest/download/Discord-Clone-Setup.exe) serves it.
+// Uploads desktop/dist/Voxoria-Chat-Setup.exe to a GitHub Release, so the website's
+// "Download" button (which points at .../releases/latest/download/Voxoria-Chat-Setup.exe) serves it.
 //
 // Run with: npm run release:desktop   (after: npm run desktop:installer)
 // It uses the GitHub login Git already has saved on this PC (Git Credential Manager).
@@ -9,7 +9,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const REPO = "jovannilil/discord-clone";
-const ASSET = "Discord-Clone-Setup.exe";
+const ASSET = "Voxoria-Chat-Setup.exe";
 const root = path.join(__dirname, "..");
 const installer = path.join(root, "desktop", "dist", ASSET);
 const { version } = require(path.join(root, "desktop", "package.json"));
@@ -54,7 +54,7 @@ async function main() {
       body: JSON.stringify({
         tag_name: tag,
         name: `Desktop app ${version}`,
-        body: "Windows installer for the Discord Clone desktop app. Download Discord-Clone-Setup.exe and run it.",
+        body: "Windows installer for the Voxoria Chat desktop app. Download Voxoria-Chat-Setup.exe and run it.",
         make_latest: "true",
       }),
     });

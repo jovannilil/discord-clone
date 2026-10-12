@@ -21,13 +21,13 @@ jobs:
           - os: windows-latest
             args: --win
             files: |
-              desktop/dist/Discord-Clone-Setup.exe
+              desktop/dist/Voxoria-Chat-Setup.exe
           - os: ubuntu-latest
             args: --linux AppImage deb tar.gz
             files: |
-              desktop/dist/Discord-Clone.AppImage
-              desktop/dist/Discord-Clone-linux.deb
-              desktop/dist/Discord-Clone-linux.tar.gz
+              desktop/dist/Voxoria-Chat.AppImage
+              desktop/dist/Voxoria-Chat-linux.deb
+              desktop/dist/Voxoria-Chat-linux.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -55,9 +55,9 @@ jobs:
           tag_name: desktop-v${{ steps.version.outputs.version }}
           name: Desktop app ${{ steps.version.outputs.version }}
           body: |
-            Desktop app for Discord Clone.
-            - Windows: Discord-Clone-Setup.exe
-            - Ubuntu / Debian / Mint: Discord-Clone-linux.deb
-            - Other Linux: Discord-Clone.AppImage (or Discord-Clone-linux.tar.gz)
+            Desktop app for Voxoria Chat.
+            - Windows: Voxoria-Chat-Setup.exe
+            - Ubuntu / Debian / Mint: Voxoria-Chat-linux.deb
+            - Other Linux: Voxoria-Chat.AppImage (or Voxoria-Chat-linux.tar.gz)
           make_latest: true
           files: ${{ matrix.files }}

@@ -23,8 +23,8 @@ export default function Login({ config, onAuth }) {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>Welcome back!</h1>
-        <p className="muted">Sign in to start chatting.</p>
+        <h1>Voxoria Chat</h1>
+        <p className="muted">Sign in to start chatting with your friends.</p>
 
         {config.offline && <div className="notice">Can't reach the server. Is it running?</div>}
 

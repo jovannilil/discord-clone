@@ -1,8 +1,8 @@
 {
-  "name": "discord-clone-desktop",
-  "productName": "Discord Clone",
-  "version": "1.0.2",
-  "description": "Desktop app for Discord Clone",
+  "name": "voxoria-chat-desktop",
+  "productName": "Voxoria Chat",
+  "version": "1.1.0",
+  "description": "Desktop app for Voxoria Chat",
   "private": true,
   "main": "main.js",
   "scripts": {
@@ -16,7 +16,7 @@
   },
   "build": {
     "appId": "com.discordclone.desktop",
-    "productName": "Discord Clone",
+    "productName": "Voxoria Chat",
     "files": [
       "main.js",
       "config.json",
@@ -31,9 +31,9 @@
     "nsis": {
       "oneClick": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Discord Clone"
+      "shortcutName": "Voxoria Chat"
     },
-    "artifactName": "Discord-Clone-Setup.${ext}",
+    "artifactName": "Voxoria-Chat-Setup.${ext}",
     "linux": {
       "target": [
         "AppImage",
@@ -41,16 +41,16 @@
       ],
       "icon": "icon.png",
       "category": "Network",
-      "artifactName": "Discord-Clone-linux.${ext}",
-      "executableName": "discord-clone"
+      "artifactName": "Voxoria-Chat-linux.${ext}",
+      "executableName": "voxoria-chat"
     },
     "appImage": {
-      "artifactName": "Discord-Clone.AppImage"
+      "artifactName": "Voxoria-Chat.AppImage"
     }
   },
   "author": {
     "name": "jovannilil",
     "email": "jovannilil@users.noreply.github.com"
   },
-  "homepage": "https://discord-clone-oxb2.onrender.com"
+  "homepage": "https://desktop-vrdnin2.tail467931.ts.net"
 }

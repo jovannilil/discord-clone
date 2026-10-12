@@ -1,4 +1,4 @@
-// Generates icon.png (256x256): a blurple rounded square with a white chat bubble.
+// Generates icon.png (256x256): a teal rounded square with a white chat bubble.
 // Run with: node make-icon.js
 const fs = require("node:fs");
 const zlib = require("node:zlib");
@@ -28,7 +28,7 @@ function colorAt(x, y) {
   if (!insideRoundRect(x, y, 8, 8, 248, 248, 64)) return null;
   const bubble = insideRoundRect(x, y, 56, 64, 200, 168, 36) || insideTail(x, y);
   if (bubble && !(insideDot(x, y, 96) || insideDot(x, y, 128) || insideDot(x, y, 160))) return [255, 255, 255];
-  return [88, 101, 242];
+  return [15, 118, 110];
 }
 
 const raw = Buffer.alloc((SIZE * 4 + 1) * SIZE);

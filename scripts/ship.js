@@ -1,16 +1,14 @@
-// Uploads your latest commits to GitHub, then tells Render to redeploy.
+// Uploads your latest commits to GitHub, then updates the site you host from this PC.
 // Run with: npm run ship
 //
-// Render reads the code from the public GitHub repo but isn't linked to it,
-// so it can't see pushes on its own. The deploy hook (kept in .deploy-hook,
-// which is never uploaded) is a private link that starts a new deploy.
+// The site runs from the Host Dashboard (Host Dashboard.bat). If it's open, this asks it to rebuild
+// the site from the new code and restart it ("Update site" button). If it isn't, nothing is restarted.
+// Pushing changes in desktop/ also makes GitHub build and publish a new desktop app (see .github/workflows/desktop.yml).
 
 const { execSync } = require("node:child_process");
-const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.join(__dirname, "..");
-const hookFile = path.join(root, ".deploy-hook");
 
 if (execSync("git status --porcelain", { cwd: root }).toString().trim()) {
   console.log("You have changes that aren't committed yet. Commit them first, then run this again.");
@@ -20,18 +18,11 @@ if (execSync("git status --porcelain", { cwd: root }).toString().trim()) {
 console.log("Uploading to GitHub...");
 execSync("git push", { cwd: root, stdio: "inherit" });
 
-if (!fs.existsSync(hookFile)) {
-  console.log("No .deploy-hook file found, so Render was not told to redeploy.");
-  process.exit(1);
-}
-
-const hook = fs.readFileSync(hookFile, "utf8").trim();
-fetch(hook, { method: "POST" })
+fetch("http://localhost:3030/api/rebuild", { method: "POST", headers: { "X-Host-Dashboard": "1" } })
   .then((res) => {
-    if (!res.ok) throw new Error(`Render answered ${res.status}`);
-    console.log("Render is redeploying. The new version will be live in about 3-5 minutes.");
+    if (!res.ok) throw new Error(`the dashboard answered ${res.status}`);
+    console.log("The Host Dashboard is rebuilding the site. Watch its logs; it's back up in about 30 seconds.");
   })
-  .catch((err) => {
-    console.error("Couldn't reach Render:", err.message);
-    process.exit(1);
+  .catch(() => {
+    console.log("The Host Dashboard isn't open, so the site wasn't updated. Open it and press \"Update site\".");
   });

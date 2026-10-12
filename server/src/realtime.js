@@ -20,6 +20,11 @@ export const voiceParticipants = (channelId) => [...(voiceRooms.get(channelId)?.
 const profiles = new Map();
 export const setProfile = (user) => profiles.set(user.id, publicUser(user));
 
+// For the host dashboard: who is online, and who is in which call.
+export const onlineUsers = () => [...onlineCounts.keys()].map((id) => profiles.get(id)).filter(Boolean);
+export const activeCalls = () =>
+  [...voiceRooms.values()].map((room) => [...room.values()].map((p) => ({ username: p.user.username, video: p.video })));
+
 export async function voiceStatesForServer(serverId) {
   const states = {};
   const channels = await db.all("SELECT id FROM channels WHERE server_id = ? AND type = 'voice'", [serverId]);

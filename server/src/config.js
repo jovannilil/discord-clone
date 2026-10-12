@@ -13,6 +13,7 @@ if (process.env.TURN_URL) {
 
 export const config = {
   port: Number(process.env.PORT) || 3001,
+  host: process.env.HOST || undefined, // the host dashboard sets 127.0.0.1 so the internet only reaches it through Tailscale
   isProd,
   jwtSecret: process.env.JWT_SECRET || (isProd ? null : "dev-only-secret-change-me"),
   googleClientId: process.env.GOOGLE_CLIENT_ID || null,

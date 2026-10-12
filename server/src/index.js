@@ -11,13 +11,16 @@ import { setupRealtime, isOnline, voiceStatesForServer } from "./realtime.js";
 import { registerSocialRoutes } from "./social.js";
 import { registerAttachmentRoutes, attachmentsForMessages } from "./attachments.js";
 import { APP_VERSION, clientDist } from "./version.js";
+import { requestLogger, startHostStats } from "./hostStats.js";
 
 const app = express();
 const httpServer = http.createServer(app);
 const io = setupRealtime(httpServer);
+startHostStats(httpServer, io);
 
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "100kb" }));
+app.use(requestLogger);
 
 // Express 4 doesn't catch rejected promises from async handlers; this forwards them to the error handler.
 const route = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -280,7 +283,7 @@ app.use((err, req, res, next) => {
 
 await backfillHandles();
 
-httpServer.listen(config.port, () => {
+httpServer.listen(config.port, config.host, () => {
   console.log(`Server running on http://localhost:${config.port} (database: ${db.kind})`);
   if (!config.googleClientId) console.log("GOOGLE_CLIENT_ID not set: Google login is hidden (dev login still works).");
 });

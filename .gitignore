@@ -5,3 +5,7 @@ server/data/
 
 # Render deploy hook (secret)
 .deploy-hook
+
+# Host dashboard: settings (has the database password) and data usage history
+host/host.env
+host/usage.json

@@ -1,4 +1,4 @@
-const COLORS = ["#5865f2", "#3ba55c", "#faa61a", "#ed4245", "#eb459e", "#00a8fc"];
+const COLORS = ["#0f766e", "#3ba55c", "#faa61a", "#ed4245", "#eb459e", "#00a8fc"];
 
 const colorFor = (id = "") => {
   let h = 0;
