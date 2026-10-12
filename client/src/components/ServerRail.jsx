@@ -39,7 +39,7 @@ export default function ServerRail({ servers, activeId, onSelect, onAdd, homeBad
         <PlusIcon size={22} />
       </button>
       {showDesktopDownload && (
-        <a className="rail-icon add" href={DESKTOP_DOWNLOAD_URL} title="Download the desktop app" aria-label="Download the desktop app">
+        <a className="rail-icon add" href={DESKTOP_DOWNLOAD_URL} title="Download the desktop app (Windows)" aria-label="Download the desktop app">
           <DownloadIcon size={22} />
         </a>
       )}

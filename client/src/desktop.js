@@ -6,5 +6,7 @@ export const DESKTOP_DOWNLOAD_URL =
 // The desktop app adds "DiscordCloneDesktop" to its user agent (see desktop/main.js).
 export const isDesktopApp = navigator.userAgent.includes("DiscordCloneDesktop");
 
-// Only offer the download on Windows websites (that's the only installer we build).
-export const showDesktopDownload = !isDesktopApp && /Windows/i.test(navigator.userAgent);
+export const isWindows = /Windows/i.test(navigator.userAgent);
+
+// Everyone on the website sees the download button; only the desktop app itself hides it.
+export const showDesktopDownload = !isDesktopApp;
