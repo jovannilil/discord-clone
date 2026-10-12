@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { api } from "../api.js";
-import { DESKTOP_DOWNLOAD_URL, showDesktopDownload, isWindows } from "../desktop.js";
+import { DOWNLOAD_URL, LINUX_APPIMAGE_URL, showDesktopDownload, isWindows, isLinux } from "../desktop.js";
 import { DownloadIcon } from "./icons.jsx";
 
 export default function Login({ config, onAuth }) {
@@ -80,10 +80,15 @@ export default function Login({ config, onAuth }) {
 
         {showDesktopDownload && (
           <>
-            <a className="btn download-app full" href={DESKTOP_DOWNLOAD_URL}>
-              <DownloadIcon size={18} /> Download the desktop app for Windows
+            <a className="btn download-app full" href={DOWNLOAD_URL}>
+              <DownloadIcon size={18} /> Download the desktop app for {isLinux ? "Linux (Ubuntu/Mint)" : "Windows"}
             </a>
-            {!isWindows && (
+            {isLinux && (
+              <p className="muted small download-note">
+                Other Linux? <a href={LINUX_APPIMAGE_URL}>Get the AppImage</a> (right-click it, Properties, allow running as a program).
+              </p>
+            )}
+            {!isWindows && !isLinux && (
               <p className="muted small download-note">
                 The desktop app is for Windows PCs. On this device, just use this website. It works the same.
               </p>

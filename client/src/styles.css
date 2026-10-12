@@ -880,3 +880,7 @@ select:focus { outline: 2px solid var(--accent); }
 .update-banner .btn { padding: 4px 12px; background: white; color: var(--accent); }
 .download-note { margin: 8px 0 0; }
 .preview-info { margin: 6px 0 0; }
+.fix-failed { margin-top: 10px; padding: 12px; border-radius: 6px; background: #2a1f22; border: 1px solid #5c2b2e; font-size: 14px; }
+.fix-failed p { margin: 0 0 8px; }
+.fix-failed ol { margin: 0 0 8px; padding-left: 20px; }
+.fix-failed li { margin-bottom: 4px; }

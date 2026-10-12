@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { checkPicture } from "./pictureCheck.js";
 
 // Voice channels use a WebRTC "mesh": every participant connects directly to every other one.
 // The server only relays the connection setup messages (offer / answer / ICE candidates).
@@ -39,13 +40,23 @@ export const micConstraints = (micId) => ({
 const VIRTUAL_CAMERA = /droidcam|obs|virtual|iriun|epoccam|camo|snap camera|xsplit|manycam|ivcam/i;
 export const isVirtualCamera = (label = "") => VIRTUAL_CAMERA.test(label);
 
-// cameraMode: "auto" (compatibility for virtual cameras, HD otherwise), "compat" (always 640x480), "hd".
+// Camera modes:
+//   auto   - compat for virtual cameras, HD for normal webcams
+//   compat - 640x480 (DroidCam free's native size)
+//   native - don't ask for any size; let the camera pick
+//   low    - 320x240
+//   hd     - 1280x720
+export const CAMERA_MODES = ["auto", "compat", "native", "low", "hd"];
+const MODE_SIZES = {
+  hd: { width: { ideal: 1280 }, height: { ideal: 720 } },
+  compat: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+  low: { width: { ideal: 320 }, height: { ideal: 240 } },
+  native: {},
+};
 export const cameraConstraints = (cameraId, { mode = "auto", label = "" } = {}) => {
-  const compat = mode === "compat" || (mode === "auto" && isVirtualCamera(label));
+  const resolved = mode === "auto" ? (isVirtualCamera(label) ? "compat" : "hd") : mode;
   return {
-    ...(compat
-      ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } }
-      : { width: { ideal: 1280 }, height: { ideal: 720 } }),
+    ...(MODE_SIZES[resolved] ?? MODE_SIZES.hd),
     ...(cameraId ? { deviceId: { exact: cameraId } } : {}),
   };
 };
@@ -328,6 +339,11 @@ export function useVoice(socket, iceServers) {
       const track = stream.getVideoTracks()[0];
       if (!channelRef.current) return track.stop();
       setVideoTrack(track, "camera");
+      checkPicture(new MediaStream([track])).then((result) => {
+        if (result !== "ok" && videoTrackRef.current === track) {
+          setError(`Your camera is sending a ${result} picture. Open Voice & Video settings and press "Fix camera automatically".`);
+        }
+      });
     } catch {
       setError("Couldn't access your camera. Pick another one in Voice & Video settings.");
     }
@@ -380,6 +396,45 @@ export function useVoice(socket, iceServers) {
       setCamera(cameraIdRef.current);
     },
     [setCamera]
+  );
+
+  // "Fix camera automatically": tries every camera (the chosen one and phone/virtual cameras first)
+  // in every mode, and keeps the first combination that shows a real picture instead of green/black.
+  const findWorkingCamera = useCallback(
+    async (onProgress = () => {}) => {
+      await refreshDevices();
+      const cams = [...devicesRef.current.cameras].sort((a, b) => {
+        const score = (d) => (d.deviceId === cameraIdRef.current ? 0 : isVirtualCamera(d.label) ? 1 : 2);
+        return score(a) - score(b);
+      });
+      const tried = [];
+      for (const cam of cams) {
+        for (const mode of ["compat", "native", "low", "hd"]) {
+          const name = cam.label || "Camera";
+          onProgress(`Trying ${name} (${mode === "native" ? "camera's own size" : mode})…`);
+          let stream;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: cameraConstraints(cam.deviceId, { mode }) });
+            const result = await checkPicture(stream);
+            tried.push({ name, mode, result });
+            if (result === "ok") {
+              stream.getTracks().forEach((t) => t.stop());
+              cameraModeRef.current = mode;
+              setCameraModeState(mode);
+              saveDeviceId("cameraMode", mode);
+              await setCamera(cam.deviceId);
+              return { ok: true, name, mode };
+            }
+          } catch {
+            tried.push({ name, mode, result: "error" });
+          } finally {
+            stream?.getTracks().forEach((t) => t.stop());
+          }
+        }
+      }
+      return { ok: false, tried };
+    },
+    [refreshDevices, setCamera]
   );
 
   // Constraints the settings preview should use, so it shows exactly what the call will send.
@@ -444,6 +499,7 @@ export function useVoice(socket, iceServers) {
     cameraMode,
     setCameraMode,
     previewConstraints,
+    findWorkingCamera,
     refreshDevices,
   };
 }
