@@ -14,6 +14,10 @@ const serverOrigin = new URL(SERVER_URL).origin;
 app.userAgentFallback =
   app.userAgentFallback.replace(/ Electron\/\S+/, "").replace(/ discord-clone-desktop\/\S+/, "") + " DiscordCloneDesktop";
 
+// Many Linux setups (e.g. Ubuntu 24.04+) block Chromium's sandbox helper, which makes the app silently
+// fail to open. This app only shows our own website, so running without that sandbox is fine.
+if (process.platform === "linux") app.commandLine.appendSwitch("no-sandbox");
+
 // Only one copy of the app at a time; a second launch focuses the existing window.
 if (!app.requestSingleInstanceLock()) app.quit();
 

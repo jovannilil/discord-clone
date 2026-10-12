@@ -1,13 +1,14 @@
 {
   "name": "discord-clone-desktop",
   "productName": "Discord Clone",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Desktop app for Discord Clone",
   "private": true,
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
   },
   "devDependencies": {
     "electron": "^33.2.1",
@@ -32,6 +33,24 @@
       "createDesktopShortcut": true,
       "shortcutName": "Discord Clone"
     },
-    "artifactName": "Discord-Clone-Setup.${ext}"
-  }
+    "artifactName": "Discord-Clone-Setup.${ext}",
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ],
+      "icon": "icon.png",
+      "category": "Network",
+      "artifactName": "Discord-Clone-linux.${ext}",
+      "executableName": "discord-clone"
+    },
+    "appImage": {
+      "artifactName": "Discord-Clone.AppImage"
+    }
+  },
+  "author": {
+    "name": "jovannilil",
+    "email": "jovannilil@users.noreply.github.com"
+  },
+  "homepage": "https://discord-clone-oxb2.onrender.com"
 }
