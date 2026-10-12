@@ -879,3 +879,4 @@ select:focus { outline: 2px solid var(--accent); }
 }
 .update-banner .btn { padding: 4px 12px; background: white; color: var(--accent); }
 .download-note { margin: 8px 0 0; }
+.preview-info { margin: 6px 0 0; }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Modal from "./Modal.jsx";
-import { cameraConstraints, micConstraints } from "../voice/useVoice.js";
+import { micConstraints, fixVirtualCamera } from "../voice/useVoice.js";
 
 /** Pick which camera and microphone to use, with a live preview and mic level meter. */
 export default function DeviceSettingsModal({ voice, onClose }) {
@@ -8,19 +8,26 @@ export default function DeviceSettingsModal({ voice, onClose }) {
   const [cameraError, setCameraError] = useState(null);
   const [micError, setMicError] = useState(null);
   const [level, setLevel] = useState(0);
+  const [previewInfo, setPreviewInfo] = useState("");
   const { cameras, mics } = voice.devices;
+  const cameraLabel = cameras.find((d) => d.deviceId === voice.cameraId)?.label ?? "";
 
-  // Live camera preview of the selected camera.
+  // Live camera preview, opened exactly the way a call would open it.
   useEffect(() => {
     let stream;
     let cancelled = false;
     setCameraError(null);
+    setPreviewInfo("");
     navigator.mediaDevices
-      .getUserMedia({ video: cameraConstraints(voice.cameraId) })
+      .getUserMedia({ video: voice.previewConstraints() })
+      .then((s) => fixVirtualCamera(s, { mode: voice.cameraMode, label: cameraLabel }))
       .then((s) => {
         if (cancelled) return s.getTracks().forEach((t) => t.stop());
         stream = s;
         if (videoRef.current) videoRef.current.srcObject = s;
+        const track = s.getVideoTracks()[0];
+        const { width, height } = track.getSettings();
+        setPreviewInfo(`${track.label || "Camera"} · ${width}×${height}`);
         voice.refreshDevices(); // names only show up after permission is granted
       })
       .catch(() => setCameraError("Can't open this camera. If it's DroidCam, make sure the DroidCam app is connected."));
@@ -28,7 +35,7 @@ export default function DeviceSettingsModal({ voice, onClose }) {
       cancelled = true;
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [voice.cameraId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [voice.cameraId, voice.cameraMode, cameraLabel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mic level meter for the selected microphone.
   useEffect(() => {
@@ -81,6 +88,17 @@ export default function DeviceSettingsModal({ voice, onClose }) {
         <video ref={videoRef} autoPlay playsInline muted />
         {cameraError && <p className="camera-preview-error">{cameraError}</p>}
       </div>
+      {previewInfo && <p className="muted small preview-info">{previewInfo}</p>}
+
+      <label htmlFor="camera-mode">Camera mode</label>
+      <select id="camera-mode" value={voice.cameraMode} onChange={(e) => voice.setCameraMode(e.target.value)}>
+        <option value="auto">Auto (recommended)</option>
+        <option value="compat">Compatibility, 640×480 (fixes a green or black picture)</option>
+        <option value="hd">HD, 1280×720</option>
+      </select>
+      <p className="muted small">
+        Picture all green or black with DroidCam or another phone camera? Choose Compatibility.
+      </p>
 
       <label htmlFor="mic-select">Microphone</label>
       <select id="mic-select" value={voice.micId} onChange={(e) => voice.setMic(e.target.value)}>
