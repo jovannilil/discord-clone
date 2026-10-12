@@ -16,6 +16,7 @@ import ServerModal from "./ServerModal.jsx";
 import ChannelModal from "./ChannelModal.jsx";
 import ProfileModal from "./ProfileModal.jsx";
 import UserProfileModal from "./UserProfileModal.jsx";
+import DeviceSettingsModal from "./DeviceSettingsModal.jsx";
 
 const EMPTY_FRIENDS = { friends: [], incoming: [], outgoing: [] };
 
@@ -55,7 +56,8 @@ export default function Main({ user, config, onLogout, onUserChange }) {
   const onLogoutRef = useRef(onLogout);
   onLogoutRef.current = onLogout;
 
-  const voice = useVoice(socket, config.iceServers);
+  const voiceState = useVoice(socket, config.iceServers);
+  const voice = { ...voiceState, openSettings: () => setModal({ type: "devices" }) };
 
   const loadServer = useCallback(async (id) => {
     const data = await api(`/servers/${id}`);
@@ -423,6 +425,7 @@ export default function Main({ user, config, onLogout, onUserChange }) {
           onClose={() => setModal(null)}
         />
       )}
+      {modal?.type === "devices" && <DeviceSettingsModal voice={voice} onClose={() => setModal(null)} />}
       {modal?.type === "profile" && (
         <ProfileModal user={user} onClose={() => setModal(null)} onSaved={onUserChange} />
       )}

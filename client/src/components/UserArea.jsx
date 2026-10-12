@@ -1,5 +1,5 @@
 import Avatar from "./Avatar.jsx";
-import { MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, ScreenIcon, PhoneOffIcon, LogoutIcon } from "./icons.jsx";
+import { MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, ScreenIcon, PhoneOffIcon, LogoutIcon, SettingsIcon } from "./icons.jsx";
 
 function VoicePanel({ voice }) {
   return (
@@ -64,6 +64,9 @@ export default function UserArea({ user, voice, connected, onLogout, onEditProfi
           onClick={voice.toggleMute}
         >
           {voice.muted ? <MicOffIcon /> : <MicIcon />}
+        </button>
+        <button className="icon-btn" title="Voice & Video settings" aria-label="Voice & Video settings" onClick={voice.openSettings}>
+          <SettingsIcon />
         </button>
         <button className="icon-btn" title="Log out" onClick={onLogout}>
           <LogoutIcon />

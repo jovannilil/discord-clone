@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import Avatar from "./Avatar.jsx";
-import { SpeakerIcon, MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, ScreenIcon, PhoneOffIcon } from "./icons.jsx";
+import { SpeakerIcon, MicIcon, MicOffIcon, VideoIcon, VideoOffIcon, ScreenIcon, PhoneOffIcon, SettingsIcon } from "./icons.jsx";
 
 function Tile({ participant, stream, mirror, connecting }) {
   const videoRef = useRef(null);
@@ -108,6 +108,9 @@ export function CallPanel({ voice }) {
           onClick={voice.toggleScreen}
         >
           <ScreenIcon size={22} />
+        </button>
+        <button className="round-btn" title="Voice & Video settings" aria-label="Voice & Video settings" onClick={voice.openSettings}>
+          <SettingsIcon size={22} />
         </button>
         <button className="round-btn hangup" title="Disconnect" onClick={voice.leave}>
           <PhoneOffIcon size={22} />

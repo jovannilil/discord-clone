@@ -10,6 +10,46 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const descToJSON = (d) => ({ type: d.type, sdp: d.sdp });
 
+// Chosen camera / microphone are remembered on this device. "" means the system default.
+const loadDeviceId = (key) => {
+  try {
+    return localStorage.getItem(key) || "";
+  } catch {
+    return "";
+  }
+};
+const saveDeviceId = (key, id) => {
+  try {
+    if (id) localStorage.setItem(key, id);
+    else localStorage.removeItem(key);
+  } catch {
+    // Storage can be unavailable (private mode); the choice just won't be remembered.
+  }
+};
+
+export const micConstraints = (micId) => ({
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  ...(micId ? { deviceId: { exact: micId } } : {}),
+});
+export const cameraConstraints = (cameraId) => ({
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  ...(cameraId ? { deviceId: { exact: cameraId } } : {}),
+});
+
+// Asks for the chosen device; if it's gone (e.g. DroidCam not running), falls back to the default one.
+async function getMedia(kind, deviceId) {
+  const build = (id) => (kind === "audio" ? { audio: micConstraints(id) } : { video: cameraConstraints(id) });
+  try {
+    return await navigator.mediaDevices.getUserMedia(build(deviceId));
+  } catch (err) {
+    if (!deviceId) throw err;
+    return navigator.mediaDevices.getUserMedia(build(""));
+  }
+}
+
 export function useVoice(socket, iceServers) {
   const [channel, setChannel] = useState(null); // { id, name, serverId, serverName }
   const [participants, setParticipants] = useState([]); // [{ socketId, user, muted, video }]
@@ -18,6 +58,11 @@ export function useVoice(socket, iceServers) {
   const [videoMode, setVideoMode] = useState(null); // null | "camera" | "screen"
   const [localVideoStream, setLocalVideoStream] = useState(null);
   const [error, setError] = useState(null);
+  const [devices, setDevices] = useState({ cameras: [], mics: [] });
+  const [cameraId, setCameraIdState] = useState(() => loadDeviceId("cameraId"));
+  const [micId, setMicIdState] = useState(() => loadDeviceId("micId"));
+  const cameraIdRef = useRef(cameraId);
+  const micIdRef = useRef(micId);
 
   const channelRef = useRef(null);
   const joiningRef = useRef(false);
@@ -107,9 +152,7 @@ export function useVoice(socket, iceServers) {
       setError(null);
 
       try {
-        micRef.current = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        });
+        micRef.current = await getMedia("audio", micIdRef.current);
       } catch {
         micRef.current = null;
         setError("No microphone access. You can listen, but others can't hear you.");
@@ -244,16 +287,72 @@ export function useVoice(socket, iceServers) {
     if (!channelRef.current) return;
     if (videoMode === "camera") return setVideoTrack(null, null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
+      const stream = await getMedia("video", cameraIdRef.current);
       const track = stream.getVideoTracks()[0];
       if (!channelRef.current) return track.stop();
       setVideoTrack(track, "camera");
     } catch {
-      setError("Couldn't access your camera.");
+      setError("Couldn't access your camera. Pick another one in Voice & Video settings.");
     }
   }, [videoMode, setVideoTrack]);
+
+  // ---------- Camera / microphone selection ----------
+
+  const refreshDevices = useCallback(async () => {
+    try {
+      const list = await navigator.mediaDevices.enumerateDevices();
+      setDevices({
+        cameras: list.filter((d) => d.kind === "videoinput" && d.deviceId),
+        mics: list.filter((d) => d.kind === "audioinput" && d.deviceId && d.deviceId !== "communications"),
+      });
+    } catch {
+      // Device listing isn't available (very old browser): the picker just stays empty.
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshDevices();
+    // Fires when a camera is plugged in or DroidCam starts/stops.
+    navigator.mediaDevices?.addEventListener?.("devicechange", refreshDevices);
+    return () => navigator.mediaDevices?.removeEventListener?.("devicechange", refreshDevices);
+  }, [refreshDevices]);
+
+  const setCamera = useCallback(
+    async (id) => {
+      cameraIdRef.current = id;
+      setCameraIdState(id);
+      saveDeviceId("cameraId", id);
+      if (videoMode !== "camera" || !channelRef.current) return;
+      try {
+        const track = (await getMedia("video", id)).getVideoTracks()[0];
+        if (!channelRef.current) return track.stop();
+        setVideoTrack(track, "camera"); // swaps the camera live, mid-call
+      } catch {
+        setError("Couldn't switch to that camera.");
+      }
+    },
+    [videoMode, setVideoTrack]
+  );
+
+  const setMic = useCallback(async (id) => {
+    micIdRef.current = id;
+    setMicIdState(id);
+    saveDeviceId("micId", id);
+    if (!channelRef.current) return;
+    try {
+      const stream = await getMedia("audio", id);
+      const track = stream.getAudioTracks()[0];
+      track.enabled = !mutedRef.current;
+      for (const { pc } of pcsRef.current.values()) {
+        const t = pc.getTransceivers().find((t) => t.receiver.track.kind === "audio");
+        t?.sender.replaceTrack(track).catch(() => {});
+      }
+      micRef.current?.getTracks().forEach((t) => t.stop());
+      micRef.current = stream;
+    } catch {
+      setError("Couldn't switch to that microphone.");
+    }
+  }, []);
 
   const toggleScreen = useCallback(async () => {
     if (!channelRef.current) return;
@@ -286,5 +385,11 @@ export function useVoice(socket, iceServers) {
     toggleMute,
     toggleCamera,
     toggleScreen,
+    devices,
+    cameraId,
+    micId,
+    setCamera,
+    setMic,
+    refreshDevices,
   };
 }
