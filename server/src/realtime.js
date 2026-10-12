@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { db, channelForMember, roomsForChannel } from "./db.js";
 import { userFromToken, publicUser } from "./auth.js";
 import { APP_VERSION } from "./version.js";
+import { attachmentDto, findUnsentAttachments, MAX_FILES_PER_MESSAGE } from "./attachments.js";
 
 // Socket.IO rooms used:
 //   user:<userId>      every socket of a user (DMs, friend updates, joining new server rooms)
@@ -152,10 +153,14 @@ export function setupRealtime(httpServer) {
 
     socket.on(
       "message:send",
-      safe(async ({ channelId, content } = {}, ack) => {
+      safe(async ({ channelId, content, attachmentIds } = {}, ack) => {
         const reply = asAck(ack);
         const text = typeof content === "string" ? content.trim() : "";
-        if (!text || text.length > 2000) return reply({ error: "Messages must be 1–2000 characters" });
+        const ids = Array.isArray(attachmentIds)
+          ? [...new Set(attachmentIds.filter((id) => typeof id === "string"))].slice(0, MAX_FILES_PER_MESSAGE)
+          : [];
+        if (text.length > 2000) return reply({ error: "Messages can be at most 2000 characters" });
+        if (!text && ids.length === 0) return reply({ error: "Type a message or add a file" });
 
         const channel = await channelForMember(channelId, user.id);
         if (!channel || !["text", "dm", "group"].includes(channel.type)) {
@@ -163,16 +168,24 @@ export function setupRealtime(httpServer) {
         }
 
         const createdAt = Date.now();
-        const row = await db.get(
-          "INSERT INTO messages (channel_id, author_id, content, created_at) VALUES (?, ?, ?, ?) RETURNING id",
-          [channel.id, user.id, text, createdAt]
-        );
+        const result = await db.tx(async (q) => {
+          const files = await findUnsentAttachments(q, ids, channel.id, user.id);
+          if (!text && files.length === 0) return null;
+          const row = await q.get(
+            "INSERT INTO messages (channel_id, author_id, content, created_at) VALUES (?, ?, ?, ?) RETURNING id",
+            [channel.id, user.id, text, createdAt]
+          );
+          for (const f of files) await q.run("UPDATE attachments SET message_id = ? WHERE id = ?", [row.id, f.id]);
+          return { id: Number(row.id), files };
+        });
+        if (!result) return reply({ error: "Those files expired. Add them again." });
 
         const message = {
-          id: Number(row.id),
+          id: result.id,
           channelId: channel.id,
           dm: channel.type === "dm" || channel.type === "group",
           content: text,
+          attachments: result.files.map(attachmentDto),
           createdAt,
           author: me(),
         };

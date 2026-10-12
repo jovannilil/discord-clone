@@ -25,3 +25,22 @@ export async function api(path, { method = "GET", body } = {}) {
   }
   return data;
 }
+
+/** Uploads one file to a channel; resolves to { id, filename, mime, size, url }. Send its id with the message. */
+export async function uploadFile(channelId, file) {
+  const token = getToken();
+  const res = await fetch(`/api/channels/${channelId}/attachments`, {
+    method: "POST",
+    headers: {
+      // Always octet-stream so the server's JSON parser leaves the file alone; the real type goes in X-File-Type.
+      "Content-Type": "application/octet-stream",
+      "X-File-Name": encodeURIComponent(file.name || "file"),
+      "X-File-Type": file.type || "application/octet-stream",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: file,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(res.status === 413 ? "That file is too big (10 MB max)" : data.error || res.statusText);
+  return data;
+}

@@ -58,6 +58,15 @@ const SQLITE_SCHEMA = `
     created_at INTEGER NOT NULL,
     PRIMARY KEY (from_id, to_id)
   );
+  CREATE TABLE IF NOT EXISTS attachments (
+    id TEXT PRIMARY KEY,
+    message_id INTEGER REFERENCES messages(id) ON DELETE CASCADE,
+    channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+    uploader_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL, mime TEXT NOT NULL, size INTEGER NOT NULL, data BLOB NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_attachments_message ON attachments(message_id);
   CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel_id, id);
   CREATE INDEX IF NOT EXISTS idx_members_user ON members(user_id);
   CREATE INDEX IF NOT EXISTS idx_dm_members_user ON dm_members(user_id);
@@ -119,6 +128,17 @@ const POSTGRES_SCHEMA = `
     PRIMARY KEY (from_id, to_id)
   );
   CREATE INDEX IF NOT EXISTS idx_friend_requests_to ON friend_requests(to_id);
+
+  -- v3: files attached to messages
+  CREATE TABLE IF NOT EXISTS attachments (
+    id TEXT PRIMARY KEY,
+    message_id BIGINT REFERENCES messages(id) ON DELETE CASCADE,
+    channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+    uploader_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL, mime TEXT NOT NULL, size INTEGER NOT NULL, data BYTEA NOT NULL,
+    created_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_attachments_message ON attachments(message_id);
 `;
 
 async function createSqlite() {

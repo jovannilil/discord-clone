@@ -151,7 +151,7 @@ export default function Main({ user, config, onLogout, onUserChange }) {
         const viewing = activeServerRef.current === HOME && homeViewRef.current === msg.channelId && document.hasFocus();
         if (!fromMe && !viewing) {
           setUnread((u) => ({ ...u, [msg.channelId]: (u[msg.channelId] ?? 0) + 1 }));
-          notify(msg.author.username, msg.content);
+          notify(msg.author.username, msg.content || "Sent a file");
         }
       }
     };

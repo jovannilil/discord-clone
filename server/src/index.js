@@ -9,6 +9,7 @@ import { db, channelForMember } from "./db.js";
 import { requireAuth, signToken, publicUser, upsertUser, verifyGoogleCredential, backfillHandles, NAME_MAX } from "./auth.js";
 import { setupRealtime, isOnline, voiceStatesForServer } from "./realtime.js";
 import { registerSocialRoutes } from "./social.js";
+import { registerAttachmentRoutes, attachmentsForMessages } from "./attachments.js";
 import { APP_VERSION, clientDist } from "./version.js";
 
 const app = express();
@@ -227,17 +228,21 @@ app.get(
       [channel.id, before]
     );
 
+    const attachments = await attachmentsForMessages(rows.map((r) => Number(r.id)));
     res.json(
       rows.reverse().map((r) => ({
         id: Number(r.id),
         channelId: channel.id,
         content: r.content,
+        attachments: attachments[Number(r.id)] ?? [],
         createdAt: r.created_at,
         author: { id: r.author_id, username: r.username, avatar: r.avatar },
       }))
     );
   })
 );
+
+registerAttachmentRoutes(app, route);
 
 // Which version of the app is deployed; open apps poll this to know when to refresh.
 app.get("/api/version", (req, res) => {
@@ -268,6 +273,7 @@ if (fs.existsSync(clientDist)) {
 }
 
 app.use((err, req, res, next) => {
+  if (err.type === "entity.too.large") return res.status(413).json({ error: "That file is too big (10 MB max)" });
   console.error(err);
   res.status(500).json({ error: "Something went wrong on the server" });
 });
